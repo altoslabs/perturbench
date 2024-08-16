@@ -1,0 +1,31 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: latent_additive
+  - override /data: sciplex3
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  datapath: ${paths.data_dir}/srivatsan20_highest_dose_preprocessed_with_embeddings.h5ad
+  embedding_key: scgpt_embbeddings
+  
+model:
+  lr_scheduler_freq: 5
+  dropout: 0.1
+  encoder_width: 2304
+  latent_dim: 128
+  lr: 1.2051920391885433e-05
+  n_layers: 3
+  wd: 2.701962713462281e-07
+  

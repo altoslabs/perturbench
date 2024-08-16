@@ -1,0 +1,19 @@
+defaults:
+  - transform: linear_model_pipeline
+  - splitter: mcfaline23_split
+  - evaluation: default
+
+_target_: perturbench.data.modules.AnnDataLitModule
+datapath: ${paths.data_dir}/mcfaline23_gxe_processed.h5ad
+perturbation_key: condition
+perturbation_combination_delimiter: +
+perturbation_control_value: control
+covariate_keys: [cell_type,treatment]
+batch_size: 8000
+num_workers: 12
+num_val_workers: 2
+num_test_workers: 0
+batch_sample: True
+add_controls: True
+use_counts: False
+embedding_key: null

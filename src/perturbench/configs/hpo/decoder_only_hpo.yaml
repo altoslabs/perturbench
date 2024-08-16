@@ -1,0 +1,36 @@
+# @package _global_
+
+#for HPO runs.
+defaults:
+  - override /hydra/sweeper: optuna
+  - override /hydra/launcher: ray
+  - override /hydra/sweeper/sampler: tpe
+
+## Specify multiple metrics and how they should be added together
+metrics_to_optimize:
+  rmse_average: 1.0
+  rmse_rank_average: 0.1
+
+hydra:
+  mode: "MULTIRUN" # set hydra to multirun by default if this config is attached
+  sweeper:
+    direction: minimize
+    study_name: ${model._target_}_${oc.env:USER}_${now:%Y-%m-%d}/${now:%H-%M-%S} # if there is an existing study with the same name, it will be resumed
+    storage: null # optuna database to store HPO results. 
+    n_trials: 4  # number of total trials
+    n_jobs: 2 # number of parallel jobs
+    max_failure_rate: 1 # overall HPO job will not fail if less than this ratio of trials fail
+    params:
+      model.n_layers: range(1, 7, step=2)
+      model.encoder_width: range(256, 5376, step=1024)
+      model.lr: tag(log, interval(5e-6, 5e-3)) 
+      model.wd: tag(log, interval(1e-8, 1e-3))
+      model.softplus_output: choice(true, false) 
+  launcher:
+    ray:
+      init:
+        ## for local runs
+        num_gpus: 2 # number of total gpus to use
+      remote:
+        num_gpus: 1 # number of gpus per trial
+        max_calls: 1

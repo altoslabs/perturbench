@@ -1,0 +1,12 @@
+# split_path: data/splits ## Specify this path if you want to use a specific saved path for the splits
+task: transfer ## Either `transfer`, `combine`, or `combine_inverse`
+covariate_keys: [cell_type]
+min_train_covariates: 1 ## Minimum number of covariates to train on per perturbation
+max_heldout_covariates: 1 ## Maximum number of covariates to hold out per perturbation
+max_heldout_fraction_per_covariate: 0.3
+max_heldout_perturbations_per_covariate: 200
+train_control_fraction: 0.5
+downsample_fraction: 1.0
+splitter_seed: 42
+save: True ## Whether to save the split to disk
+output_path: "${paths.output_dir}/" ## Specify this path if you want to save the split

@@ -1,0 +1,28 @@
+_target_: perturbench.modelcore.models.CPA
+n_genes: null
+n_perts: null
+
+recon_loss: "gauss" 
+
+n_latent: 128 
+hidden_dim: 256 
+n_layers_encoder: 3
+n_layers_pert_emb: 2
+n_layers_covar_emb: 1
+
+variational: True
+
+adv_classifier_n_layers: 2
+adv_classifier_hidden_dim: 128
+
+lr: 1e-5
+wd: 1e-8
+
+dropout: 1e-1
+kl_weight: 1.0
+adv_weight: 1.0
+penalty_weight: 10.0
+adv_steps: 2
+
+softplus_output: False
+elementwise_affine: False

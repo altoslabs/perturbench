@@ -1,0 +1,6 @@
+model_checkpoint:
+  _target_: lightning.pytorch.callbacks.ModelCheckpoint
+  monitor: val_loss # quantity to monitor
+  dirpath: ${hydra:runtime.output_dir}/checkpoints # directory to save checkpoints
+  # every_n_train_steps: 80 # save checkpoint every n train steps
+  # every_n_epochs: 5 # save checkpoint every n epochs

@@ -1,0 +1,37 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: cpa
+  - override /data: sciplex3
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  datapath: ${paths.data_dir}/srivatsan20_highest_dose_preprocessed_with_embeddings.h5ad
+  embedding_key: scgpt_embbeddings
+  add_controls: False
+
+model:
+  adv_classifier_hidden_dim: 613
+  adv_classifier_n_layers: 1
+  adv_steps: 10
+  adv_weight: 0.3193173425419723
+  dropout: 0.4
+  hidden_dim: 4352
+  kl_weight: 1.6227536059761725
+  lr: 0.00013133995866699752
+  n_latent: 192
+  n_layers_encoder: 3
+  n_layers_pert_emb: 2
+  penalty_weight: 2.4986550596383217
+  wd: 5.6865317078420024e-05

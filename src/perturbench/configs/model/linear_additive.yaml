@@ -1,0 +1,6 @@
+_target_: perturbench.modelcore.models.LinearAdditive
+n_genes: null
+n_perts: null
+lr: 1e-3
+wd: 1e-4
+inject_covariates: True

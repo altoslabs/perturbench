@@ -1,0 +1,4 @@
+early_stopping:
+  _target_: lightning.pytorch.callbacks.EarlyStopping
+  monitor: val_loss # quantity to monitor
+  patience: 50 # early stopping patience

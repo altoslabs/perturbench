@@ -1,0 +1,16 @@
+split_value_to_evaluate: test
+max_control_cells_per_covariate: 1000
+
+evaluation_pipelines:
+  - aggregation: average
+    metric: rmse
+    rank: True
+
+  - aggregation: logfc
+    metric: cosine
+    rank: True
+
+save_evaluation: True
+save_dir: "${paths.output_dir}/evaluation/"
+chunk_size: 20
+print_summary: True

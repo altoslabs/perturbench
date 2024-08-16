@@ -1,0 +1,13 @@
+name: code-quality
+
+on: [push, pull_request]
+
+jobs:
+  run-linter:
+    name: run linter
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chartboost/ruff-action@v1

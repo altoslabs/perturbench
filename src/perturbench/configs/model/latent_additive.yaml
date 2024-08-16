@@ -1,0 +1,16 @@
+_target_: perturbench.modelcore.models.LatentAdditive
+n_genes: null
+n_perts: null
+
+## Optimizer params
+lr: 6.72106935566634e-05
+wd: 7.90200208844498e-09
+
+## Model params
+n_layers: 3
+encoder_width: 3072
+latent_dim: 160
+softplus_output: True
+inject_covariates_encoder: True
+inject_covariates_decoder: True
+dropout: 0.1

@@ -1,0 +1,38 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: cpa
+  - override /data: norman19
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  splitter:
+    max_heldout_fraction_per_covariate: 0.7
+  add_controls: False
+
+model:
+  use_adversary: False
+  adv_classifier_hidden_dim: 337
+  adv_classifier_n_layers: 4
+  adv_steps: 3
+  adv_weight: 0.32127668251064767
+  dropout: 0.1
+  hidden_dim: 5376
+  kl_weight: 4.517281763087417
+  lr: 0.00042282094681041243
+  n_latent: 512
+  n_layers_encoder: 3
+  n_layers_pert_emb: 1
+  penalty_weight: 13.113321605817095
+  wd: 4.269941247899176e-06

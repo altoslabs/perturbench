@@ -1,0 +1,15 @@
+_target_: perturbench.modelcore.models.BiolordStar
+n_genes: null
+n_perts: null
+
+## Optimizer params
+lr: 6.72106935566634e-05
+wd: 7.90200208844498e-09
+penalty_weight: 1.0
+
+## Model params
+n_layers: 3
+encoder_width: 3072
+latent_dim: 32
+softplus_output: True
+dropout: 0.1

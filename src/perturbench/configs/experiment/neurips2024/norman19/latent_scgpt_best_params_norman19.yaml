@@ -1,0 +1,33 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: latent_additive
+  - override /data: norman19
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  splitter:
+    max_heldout_fraction_per_covariate: 0.7
+  datapath: ${paths.data_dir}/norman19_preprocessed_with_embeddings.h5ad
+  embedding_key: scgpt_embbeddings
+
+model:
+  inject_covariates_encoder: False
+  inject_covariates_decoder: False
+  dropout: 0.4
+  encoder_width: 5376
+  latent_dim: 512
+  lr: 8.965448576753094e-05
+  n_layers: 1
+  wd: 1.9716752225147476e-05

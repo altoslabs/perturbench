@@ -1,0 +1,27 @@
+ae_hparams:
+    autoencoder_depth: 4
+    autoencoder_width: 256
+    adversary_depth: 3
+    adversary_width: 256
+    use_batch_norm: False
+    use_layer_norm: True
+    output_activation: linear
+    dropout_rate: 0.2
+    variational: True
+    seed: 0
+
+trainer_hparams:
+    n_epochs_warmup: 10
+    n_epochs_kl_warmup: 10
+    max_kl_weight: 0.1
+    adversary_lr: 0.00008847032648856746
+    adversary_wd: 9.629190571404551e-07
+    adversary_steps: 3
+    autoencoder_lr: 0.00007208558788012054
+    autoencoder_wd: 1.2280838320404273e-07
+    dosers_lr: 0.00008835011062896268
+    dosers_wd: 5.886005123780177e-06
+    penalty_adversary: 63.44954424334805
+    reg_adversary: 48.73324753854268
+    cycle_coeff: 7.19539336141403
+    step_size_lr: 25

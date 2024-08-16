@@ -1,0 +1,33 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: biolord
+  - override /data: sciplex3
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+  precision: 16
+
+data:
+  batch_size: 1000
+  add_controls: False
+
+model:
+  dropout: 0.4
+  encoder_width: 2304
+  latent_dim: 512
+  lr: 0.00016701245023478605
+  wd: 0.00046077468143989676
+  n_layers: 1
+  penalty_weight: 2621.3333751927075
+  

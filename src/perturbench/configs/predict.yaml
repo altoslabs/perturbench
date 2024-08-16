@@ -1,0 +1,33 @@
+# @package _global_
+
+# specify here default configuration
+# order of defaults determines the order in which configs override each other
+defaults:
+  - _self_
+  - data: ??? ## Specify data config
+  - model: ??? ## Specify model config
+  - trainer: default
+  - paths: default
+  - hydra: default
+  
+  # experiment configs allow for version control of specific hyperparameters
+  # e.g. best hyperparameters for given model and datamodule
+  - experiment: null
+
+# Provide checkpoint path to pretrained model
+ckpt_path: ???
+
+# task name, determines output directory path
+task_name: "predict"
+
+# Path to prediction dataframe (generate with notebooks/demos/generate_prediction_dataframe)
+prediction_dataframe_path: ???
+
+# seed for random number generators in pytorch, numpy and python.random
+seed: null
+
+# Path to save predictions
+output_path: "${paths.output_dir}/predictions/"
+
+# Number of perturbations to generate in memory at once
+chunk_size: 50

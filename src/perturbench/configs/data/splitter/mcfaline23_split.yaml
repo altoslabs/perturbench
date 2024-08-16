@@ -1,0 +1,1 @@
+split_path: ${paths.data_dir}/mcfaline23_gxe_splits/full_split.csv ## Specify this path if you want to use a specific saved path for the splits

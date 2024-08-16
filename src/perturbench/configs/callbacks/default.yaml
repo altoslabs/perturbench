@@ -1,0 +1,10 @@
+defaults:
+  - early_stopping
+  - lr_monitor
+  - model_summary
+  - model_checkpoint
+  - rich_progress_bar
+  - _self_
+
+model_summary:
+  max_depth: -1

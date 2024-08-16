@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perturbench"
+description = "PerturBench: Benchmarking Machine Learning Models for Cellular Perturbation Analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "..."}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    'numpy',
+    'pyyaml',
+    'pandas',
+    'anndata',
+    'scanpy',
+    'scipy==1.12.0',
+    'tqdm',
+    'lightning',
+    "torch",
+    "torchvision",
+    "tensorboard",
+    "hydra-core",
+    "hydra_colorlog",
+    'mlflow-skinny',
+    'matplotlib',
+    'seaborn',
+    'scikit-learn',
+    'scikit-misc',
+    'adjusttext',
+    'pytest',
+    'rich',
+    'psycopg2-binary',
+    'optuna',
+    'ray',
+    'python-dotenv',
+    'hydra-optuna-sweeper@git+https://github.com/facebookresearch/hydra.git#subdirectory=plugins/hydra_optuna_sweeper',
+    'hydra-ray-launcher@git+https://github.com/facebookresearch/hydra.git#subdirectory=plugins/hydra_ray_launcher',
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+cli = [
+    "click",
+    "rich",
+]
+
+[project.scripts]
+train = "perturbench.modelcore.train:main"
+predict = "perturbench.modelcore.predict:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]  # list of folders that contain the packages (["."] by default)
+include = ["perturbench*"]  # package names should match these glob patterns (["*"] by default)
+exclude = ["tests", "docs", "examples"]  # exclude packages matching these glob patterns (empty by default)
+# namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+
+[tool.setuptools.dynamic]
+version = {attr = "perturbench.modelcore.VERSION"}
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore `E402` (import violations) in all `__init__.py` files, and in `path/to/file.py`.
+"__init__.py" = ["F401"]
+# "path/to/file.py" = ["E402"]

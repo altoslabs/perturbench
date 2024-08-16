@@ -1,0 +1,26 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: linear_additive
+  - override /data: norman19
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  splitter:
+    max_heldout_fraction_per_covariate: 0.7
+
+model:
+  inject_covariates: false
+  lr: 0.004716813309487752
+  wd: 1.7588044643755207e-08

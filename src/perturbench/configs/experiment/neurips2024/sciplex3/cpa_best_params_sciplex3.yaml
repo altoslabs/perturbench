@@ -1,0 +1,35 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /model: cpa
+  - override /data: sciplex3
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  add_controls: False
+
+model:
+  adv_classifier_hidden_dim: 438
+  adv_classifier_n_layers: 3
+  adv_steps: 20
+  adv_weight: 4.409853075505284
+  dropout: 0.1
+  hidden_dim: 3328
+  kl_weight: 14.319077119336326
+  lr: 0.00015862183535536215
+  n_latent: 512
+  n_layers_encoder: 3
+  n_layers_pert_emb: 1
+  penalty_weight: 0.13385611353853027
+  wd: 2.116679028129785e-08

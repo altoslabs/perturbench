@@ -1,0 +1,26 @@
+# @package _global_
+defaults:
+  - override /model: latent_additive 
+  - override /data: mcfaline23
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  evaluation:
+    chunk_size: 5
+  batch_size: 8000
+  num_workers: 8
+  splitter:
+    split_path: ${paths.data_dir}/mcfaline23_gxe_splits/small_covariate_split.csv
+
+model:
+  dropout: 0.0
+  encoder_width: 1280
+  latent_dim: 512
+  lr: 0.00021234604809346303
+  n_layers: 1
+  wd: 1.4101074283996682e-07

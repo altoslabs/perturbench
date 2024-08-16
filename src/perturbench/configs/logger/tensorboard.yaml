@@ -1,0 +1,7 @@
+# TensorBoard logger built in lightning
+
+tensorboard:
+  _target_: lightning.pytorch.loggers.TensorBoardLogger
+  save_dir: "${paths.output_dir}"
+  name: "tensorboard/"
+  prefix: ""

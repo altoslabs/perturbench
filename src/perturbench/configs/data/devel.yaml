@@ -1,0 +1,17 @@
+defaults:
+  - transform: linear_model_pipeline
+  - collate: linear_model_collate
+  - splitter: default
+  - evaluation: default
+
+_target_: perturbench.data.modules.AnnDataLitModule
+datapath: src/perturbench/data/resources/devel.h5ad 
+perturbation_key: condition
+perturbation_combination_delimiter: +
+perturbation_control_value: control
+covariate_keys: [cell_type]
+batch_size: 8
+num_workers: 0
+batch_sample: True
+add_controls: True
+use_counts: False

@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - override /model: decoder_only
+  - override /data: mcfaline23
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  evaluation:
+    chunk_size: 5
+  batch_size: 8000
+  num_workers: 12
+  splitter:
+    split_path: ${paths.data_dir}/mcfaline23_gxe_splits/full_covariate_split.csv
+
+model:
+  encoder_width: 3328
+  lr: 0.00019009753022442835
+  n_layers: 1
+  softplus_output: true
+  wd: 5.697560765121058e-07

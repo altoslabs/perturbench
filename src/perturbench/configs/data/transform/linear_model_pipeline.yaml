@@ -1,0 +1,6 @@
+conf:
+  _target_: perturbench.data.transforms.pipelines.SingleCellPipeline
+  _partial_: true
+dependencies:
+  perturbation_uniques: perturbation_uniques
+  covariate_uniques: covariate_uniques

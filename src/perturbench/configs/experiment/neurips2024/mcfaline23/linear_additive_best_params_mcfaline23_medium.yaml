@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+  - override /model: linear_additive 
+  - override /data: mcfaline23
+
+seed: 245
+
+trainer:
+  min_epochs: 5
+  max_epochs: 500
+
+data:
+  evaluation:
+    chunk_size: 5
+  batch_size: 8000
+  num_workers: 8
+  splitter:
+    split_path: ${paths.data_dir}/mcfaline23_gxe_splits/medium_covariate_split.csv
+
+model:
+  inject_covariates: true
+  lr: 0.0022999550256692877
+  wd: 1.0685179638547894e-08

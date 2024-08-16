@@ -1,0 +1,23 @@
+_target_: perturbench.modelcore.models.SparseAdditiveVAE
+n_genes: null
+n_perts: null
+
+## Model params
+n_layers_encoder_x: 5
+n_layers_encoder_e: 3
+n_layers_decoder: 4
+hidden_dim_x: 2332
+hidden_dim_cond: 329
+latent_dim: 55
+dropout: 0.2
+inject_covariates_encoder: False
+inject_covariates_decoder: False
+mean_field_encoding: False
+sparse_additive_mechanism: True
+mask_prior_probability: 0.01
+simple_latent: True
+
+
+## Optimizer params
+lr: 8.184599223121104e-05
+wd: 2.4153279969771546e-05
