@@ -1,0 +1,14 @@
+name: causalcell
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+# channel_priority: strict
+dependencies:
+  - python=3.11
+  - ipykernel
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - pip
