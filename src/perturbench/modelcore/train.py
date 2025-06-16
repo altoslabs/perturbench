@@ -8,8 +8,9 @@ from perturbench.modelcore.utils import multi_instantiate
 from perturbench.modelcore.models import PerturbationModel
 from hydra.core.hydra_config import HydraConfig
 import torch
+from omegaconf import OmegaConf
 
-torch.set_float32_matmul_precision('medium')
+torch.set_float32_matmul_precision("medium")
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +37,11 @@ def train(runtime_context: dict):
 
     log.info("Instantiating loggers...")
     loggers: List[Logger] = multi_instantiate(cfg.get("logger"))
+
+    for logger in loggers:
+        if isinstance(logger, L.pytorch.loggers.WandbLogger):
+            flat_cfg = OmegaConf.to_container(cfg, resolve=True)
+            logger.experiment.config.update(flat_cfg)
 
     log.info("Instantiating trainer <%s>", cfg.trainer._target_)
     trainer: L.Trainer = hydra.utils.instantiate(
