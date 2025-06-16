@@ -34,12 +34,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import pandas as pd
 
 from perturbench.data.types import Batch
 from .base import PerturbationModel
+from ..nn.mlp import MLP
 
-
-class LinearAdditive(PerturbationModel):
+class EmbeddingModel(PerturbationModel):
     """
     A latent additive model for predicting perturbation effects
     """
@@ -48,9 +49,14 @@ class LinearAdditive(PerturbationModel):
         self,
         n_genes: int,
         n_perts: int,
-        inject_covariates: bool = False,
+        inject_covariates: False,
         lr: float | None = None,
         wd: float | None = None,
+        embedding_path: str = None,
+        dropout: float = 0.0,
+        n_layers: int = 1,
+        latent_dim: int = 64,
+        encoder_width: int = 128,
         lr_scheduler_freq: int | None = None,
         lr_scheduler_interval: str | None = None,
         lr_scheduler_patience: int | None = None,
@@ -76,7 +82,7 @@ class LinearAdditive(PerturbationModel):
                 output of the decoder to enforce non-negativity
             datamodule: The datamodule used to train the model
         """
-        super(LinearAdditive, self).__init__(
+        super(EmbeddingModel, self).__init__(
             datamodule=datamodule,
             lr=lr,
             wd=wd,
@@ -93,37 +99,55 @@ class LinearAdditive(PerturbationModel):
         if n_perts is not None:
             self.n_perts = n_perts
 
-        self.inject_covariates = inject_covariates
-        if inject_covariates:
-            if datamodule is None or datamodule.train_context is None:
-                raise ValueError(
-                    "If inject_covariates is True, datamodule must be provided"
-                )
-            n_total_covariates = np.sum(
-                [
-                    len(unique_covs)
-                    for unique_covs in datamodule.train_context[
-                        "covariate_uniques"
-                    ].values()
-                ]
-            )
-            self.fc_pert = nn.Linear(self.n_perts + n_total_covariates, self.n_genes)
-        else:
-            self.fc_pert = nn.Linear(self.n_perts, self.n_genes)
+        embedding_df = pd.read_parquet(embedding_path)
+        self.datamodule = datamodule
+        
+        self._init_embedding(embedding_df, self.datamodule.train_context["perturbation_uniques"])
+        
+        self.pert_encoder = MLP(
+            self.embedding.shape[1], encoder_width, latent_dim // 2, n_layers, dropout
+        )
 
+        self.gex_encoder = MLP(
+            self.n_genes, encoder_width, latent_dim // 2, n_layers, dropout
+        )
+        
+        self.decoder = MLP(
+            latent_dim, encoder_width, self.n_genes, n_layers, dropout
+        )
+
+
+    def _init_embedding(self, embedding_df: pd.DataFrame, perturbations: list[str]):
+        gene_map = {
+            "FOXL2NB": "C3orf72",
+            "MIDEAS": "ELMSAN1",
+            "CBARP": "C19orf26",
+            "MAP3K21": "KIAA1804",
+            "NUP50-DT": "NUP50-AS1",
+            "SNHG29": "LRRC75A-AS1",
+            "STING1": "TMEM173",
+            "ATP5MK": "ATP5MD"
+        }
+        
+        embedding_df = embedding_df.rename(index=gene_map)
+        embedding_df = embedding_df.loc[perturbations]
+        
+        self.register_buffer("embedding", torch.Tensor(embedding_df.values))   
+    
     def forward(
         self,
         control_expression: torch.Tensor,
         perturbation: torch.Tensor,
         covariates: dict,
     ):
-        if self.inject_covariates:
-            merged_covariates = torch.cat(
-                [cov for cov in covariates.values()], dim=1
-            )
-            perturbation = torch.cat([perturbation, merged_covariates], dim=1)
 
-        predicted_perturbed_expression = control_expression + self.fc_pert(perturbation)
+        latent_control = self.gex_encoder(control_expression)
+        perturbation_embedding = torch.matmul(perturbation, self.embedding)
+        latent_perturbation = self.pert_encoder(perturbation_embedding)
+        latent = torch.cat([latent_control, latent_perturbation], dim=1)
+        
+        predicted_perturbed_expression = self.decoder(latent)
+        
         if self.softplus_output:
             predicted_perturbed_expression = F.softplus(predicted_perturbed_expression)
         return predicted_perturbed_expression

@@ -139,7 +139,8 @@ def build_control_dict(
         covariate_keys = control_covariate_df.columns.tolist()
 
     grouped = control_covariate_df.groupby(
-        list(covariate_keys)
+        list(covariate_keys),
+        observed=False
     )  # groupby requires a list
     control_indexes = FrozenDictKeyMap()
     for group_key, group_indices in grouped.indices.items():

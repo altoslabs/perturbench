@@ -263,7 +263,7 @@ class PerturbationModel(L.LightningModule, ABC):
                 avg_rank = rank_df.groupby("model").mean("rank")
                 summary_metrics_dict[metric + "_rank_" + aggr] = avg_rank["rank"]
 
-        summary_metrics = pd.DataFrame(summary_metrics_dict).T.applymap(
+        summary_metrics = pd.DataFrame(summary_metrics_dict).T.map(
             lambda x: float(
                 np.format_float_positional(
                     x, precision=4, unique=False, fractional=False, trim="k"

@@ -7,7 +7,9 @@ from lightning.pytorch.loggers import Logger
 from perturbench.modelcore.utils import multi_instantiate
 from perturbench.modelcore.models import PerturbationModel
 from hydra.core.hydra_config import HydraConfig
+import torch
 
+torch.set_float32_matmul_precision('medium')
 
 log = logging.getLogger(__name__)
 

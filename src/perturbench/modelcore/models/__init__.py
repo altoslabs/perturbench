@@ -6,3 +6,4 @@ from .base import PerturbationModel
 from .biolord import BiolordStar
 from .average import Average
 from .cpa import CPA
+from .embedding import EmbeddingModel

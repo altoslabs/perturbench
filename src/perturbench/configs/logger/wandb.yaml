@@ -1,0 +1,6 @@
+# TensorBoard logger built in lightning
+
+wandb:
+  _target_: lightning.pytorch.loggers.WandbLogger
+  save_dir: "${paths.output_dir}"
+  project: perturbench

@@ -1,0 +1,9 @@
+_target_: perturbench.modelcore.models.EmbeddingModel
+n_genes: null
+n_perts: null
+lr: 1e-4
+wd: 1e-5
+inject_covariates: False
+softplus_output: True
+dropout: 0.1
+embedding_path: "./scgpt.parquet"

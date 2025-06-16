@@ -1,5 +1,5 @@
 # train with many loggers at once
 
 defaults:
-  - tensorboard
+  - wandb
   - csv
