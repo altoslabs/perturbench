@@ -10,8 +10,8 @@ import os
 import subprocess as sp
 from scipy.sparse import csr_matrix
 
-#get_ipython().run_line_magic('load_ext', 'autoreload')
-#get_ipython().run_line_magic('autoreload', '2')
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 
 
 # In[ ]:
