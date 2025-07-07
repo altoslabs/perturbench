@@ -13,7 +13,7 @@ library(SeuratDisk)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 ## Data cache directory
-data_cache_dir = '../perturbench_data' ## Change this to your local data directory
+data_cache_dir = '/cluster/scratch/fluebeck/perturbench_data' ## Change this to your local data directory
 
 ## Define paths to Seurat objects and download from Zenodo
 ifng_seurat_path = paste0(data_cache_dir, "/Seurat_object_IFNG_Perturb_seq.rds", sep="")

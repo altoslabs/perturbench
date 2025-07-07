@@ -12,14 +12,11 @@ import anndata as ad
 import gc
 from perturbench.analysis.preprocess import preprocess
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
-
 
 # In[11]:
 
 
-data_directory = '../perturbench_data/'
+data_directory = '/cluster/scratch/fluebeck/perturbench_data/'
 
 
 # In[ ]:

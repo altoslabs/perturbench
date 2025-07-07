@@ -1,0 +1,5 @@
+evaluation:
+  _target_: perturbench.modelcore.callbacks.EvaluationCallback
+  eval_interval: 1  # Run evaluation every N epochs
+  log_prefix: "eval"  # Prefix for logged metrics
+  max_batches: 10  # Maximum validation batches to evaluate 

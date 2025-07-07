@@ -3,7 +3,7 @@ from typing import List
 import hydra
 import lightning as L
 from omegaconf import DictConfig
-from lightning.pytorch.loggers import Logger
+from lightning.pytorch.loggers import Logger, WandbLogger
 from perturbench.modelcore.utils import multi_instantiate
 from perturbench.modelcore.models import PerturbationModel
 from hydra.core.hydra_config import HydraConfig
@@ -39,9 +39,30 @@ def train(runtime_context: dict):
     loggers: List[Logger] = multi_instantiate(cfg.get("logger"))
 
     for logger in loggers:
-        if isinstance(logger, L.pytorch.loggers.WandbLogger):
+
+        if isinstance(logger, WandbLogger):
             flat_cfg = OmegaConf.to_container(cfg, resolve=True)
-            logger.experiment.config.update(flat_cfg)
+            if isinstance(flat_cfg, dict):
+                model_cfg = flat_cfg.get("model")
+                if isinstance(model_cfg, dict) and "_target_" in model_cfg:
+                    model_cfg["model_name"] = model_cfg["_target_"].split(".")[-1]
+                data_cfg = flat_cfg.get("data")
+                if isinstance(data_cfg, dict) and "datapath" in data_cfg:
+                    data_cfg["dataset_name"] = data_cfg["datapath"].split("/")[-1]
+                
+                if hasattr(logger, "experiment") and hasattr(logger.experiment, "config"):
+                    logger.experiment.config.update(flat_cfg)
+
+                # Add Optuna study name to wandb config if running HPO
+                try:
+                    hydra_cfg = HydraConfig.get()
+                    print("Hydra config: ", hydra_cfg)
+                    if hasattr(hydra_cfg, "sweeper") and hasattr(hydra_cfg.sweeper, "study_name"):
+                        study_name = hydra_cfg.sweeper.study_name
+                        logger.experiment.config["optuna_study_name"] = study_name
+                        print("Found study name: ", study_name)
+                except Exception as e:
+                    log.debug(f"Could not get study name from config: {e}")
 
     log.info("Instantiating trainer <%s>", cfg.trainer._target_)
     trainer: L.Trainer = hydra.utils.instantiate(

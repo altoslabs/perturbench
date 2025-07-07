@@ -17,9 +17,6 @@ from scipy.sparse import csr_matrix
 from perturbench.analysis.utils import get_ensembl_mappings
 from perturbench.analysis.preprocess import preprocess
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
-
 
 # Get gene names from ENSEMBL IDs
 
@@ -36,7 +33,7 @@ len(id_to_gene.keys())
 # In[ ]:
 
 
-data_cache_dir = '../perturbench_data'
+data_cache_dir = '/cluster/scratch/fluebeck/perturbench_data'
 
 
 # In[4]:

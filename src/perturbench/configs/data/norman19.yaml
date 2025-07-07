@@ -10,7 +10,7 @@ perturbation_combination_delimiter: +
 perturbation_control_value: control
 covariate_keys: [cell_type]
 batch_size: 4000
-num_workers: 8
+num_workers: 2
 batch_sample: True
 add_controls: True
 use_counts: False

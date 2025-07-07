@@ -17,8 +17,6 @@ from sklearn.model_selection import train_test_split
 
 from perturbench.data.datasplitter import PerturbationDataSplitter
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
 
 
 # ## Load data and generate subsets

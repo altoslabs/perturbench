@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-- override /model: latent_additive
+- override /model: latent_additive_embedding
 - override /callbacks: default
 - override /data: frangieh21
 
@@ -11,17 +11,17 @@ trainer:
 
 model:
   dropout: 0.30000000000000004
-  encoder_width: 3328
+  encoder_width: 2304
+  pert_encoder_width: 512
   inject_covariates_decoder: true
   inject_covariates_encoder: true
-  latent_dim: 192
-  lr: 0.0004036126472173799
+  latent_dim: 256
+  lr: 0.00052308363076951
   n_genes: null
   n_layers: 1
   n_perts: null
   softplus_output: true
-  wd: 2.0909467656368513e-08
-
-data:
-  datapath: ${paths.data_dir}/frangieh21_processed_with_embeddings.h5ad
-  embedding_key: scgpt_embeddings
+  wd: 1.564792695502722e-07
+  embed_cell: false
+  embed_gene: true
+  debug_zero_embeddings: false

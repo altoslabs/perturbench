@@ -14,13 +14,13 @@ seed: 245
 
 trainer:
   min_epochs: 5
-  max_epochs: 500
+  max_epochs: 400
 
 data:
   splitter:
     max_heldout_fraction_per_covariate: 0.7
   datapath: ${paths.data_dir}/norman19_preprocessed_with_embeddings.h5ad
-  embedding_key: scgpt_embbeddings
+  embedding_key: scgpt_embeddings
 
 model:
   inject_covariates_encoder: False

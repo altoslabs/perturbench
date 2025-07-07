@@ -16,10 +16,11 @@ hydra:
   sweeper:
     # direction: minimize
     study_name: ${model._target_}_${oc.env:USER}_${now:%Y-%m-%d}/${now:%H-%M-%S} # if there is an existing study with the same name, it will be resumed
-    storage: null
+    storage: null # optuna database to store HPO results. 
     n_trials: 100  # number of total trials
     n_jobs: 100 # number of parallel jobs
     params:
-      # model.n_layers: range(1, 3, step=2)
       model.encoder_width: choice(1280, 2304, 5376)
       model.latent_dim: choice(64, 192, 256, 512)
+      model.embed_gene: false
+      seed: choice(0, 245)

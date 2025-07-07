@@ -19,13 +19,14 @@ import torch
 import torch.nn.functional as F
 import lightning as L
 import numpy as np
+import json
 
 from ..nn.mlp import MLP, MaskNet
 from .base import PerturbationModel
 from perturbench.data.types import Batch
 
 
-class LatentAdditive(PerturbationModel):
+class LatentAdditiveEmbedding(PerturbationModel):
     """
     A latent additive model for predicting perturbation effects
     """
@@ -36,7 +37,10 @@ class LatentAdditive(PerturbationModel):
         n_perts: int,
         n_layers: int = 2,
         encoder_width: int = 128,
+        pert_encoder_width: int = 128,
         latent_dim: int = 32,
+        embed_cell: bool = True,
+        embed_gene: bool = True,
         debug_zero_embeddings: bool = False,
         lr: float | None = None,
         wd: float | None = None,
@@ -80,7 +84,7 @@ class LatentAdditive(PerturbationModel):
                 covariates
             datamodule: The datamodule used to train the model
         """
-        super(LatentAdditive, self).__init__(
+        super(LatentAdditiveEmbedding, self).__init__(
             datamodule=datamodule,
             lr=lr,
             wd=wd,
@@ -95,7 +99,9 @@ class LatentAdditive(PerturbationModel):
             self.n_genes = n_genes
         if n_perts is not None:
             self.n_perts = n_perts
+        self.embed_gene = embed_gene
         self.debug_zero_embeddings = debug_zero_embeddings
+
 
         if inject_covariates_encoder or inject_covariates_decoder:
             if datamodule is None or datamodule.train_context is None:
@@ -111,14 +117,68 @@ class LatentAdditive(PerturbationModel):
                 ]
             )
 
+        if embed_gene:
+            if datamodule is None or datamodule.train_context is None:
+                raise ValueError(
+                    "If embed_gene is True, datamodule must be provided"
+                )
+            pert_names = {i: name for i, name in enumerate(datamodule.train_context["perturbation_uniques"])}
+            self.gene_embedding = torch.nn.Embedding(60697, 512, padding_idx=60694)
+            self.gene_embedding.load_state_dict(torch.load("/cluster/scratch/fluebeck/perturbench_data/pretrained_models/scGPT_human/gene_embedding.pth"))
+            
+            # Freeze the gene embedding parameters to make them non-trainable
+            self.gene_embedding.requires_grad_(False)
+            print("Gene embedding parameters frozen (non-trainable)")
+            
+            # Add a learnable scaling parameter for the embeddings
+            self.embedding_scale = torch.nn.Parameter(torch.tensor(10.0))
+            print("Added learnable embedding scale parameter")
+
+            with open("/cluster/scratch/fluebeck/perturbench_data/pretrained_models/scGPT_human/vocab.json", "r") as f:
+                vocab = json.load(f)
+            gene_vocab = vocab
+
+            pert_name_map = {
+                # name in perturbench : name in scgpt
+                "C3orf72": "FOXL2NB",
+                "ELMSAN1": "MIDEAS",
+                "C19orf26": "CBARP",
+                "KIAA1804": "MAP3K21",
+                "NUP50-AS1": "NUP50-DT",
+                "LRRC75A-AS1": "SNHG29",
+                "TMEM173": "STING1",
+                "ATP5MD": "ATP5MK",
+            }
+
+            self.pert_id_to_scgpt_id = {}
+            for i, pert_name in pert_names.items():
+                scgpt_pert_name = pert_name_map.get(pert_name, pert_name)
+                if scgpt_pert_name not in gene_vocab:
+                    print(f"Perturbation {pert_name} not in vocab.")
+                else:
+                    self.pert_id_to_scgpt_id[i] = gene_vocab[scgpt_pert_name]
+            max_pert_id = max(self.pert_id_to_scgpt_id.keys())
+            mapping_tensor = torch.full((max_pert_id + 1,), fill_value=0, dtype=torch.long)
+            for pert_id, scgpt_id in self.pert_id_to_scgpt_id.items():
+                mapping_tensor[pert_id] = scgpt_id
+            self.register_buffer('pert_to_scgpt_tensor', mapping_tensor)
+            print(f"Perturbation to scGPT ID mapping: {self.pert_id_to_scgpt_id}")
+            
+
         encoder_input_dim = (
             self.n_input_features + n_total_covariates
             if inject_covariates_encoder
             else self.n_input_features
         )
-        decoder_input_dim = (
-            latent_dim + n_total_covariates if inject_covariates_decoder else latent_dim
+        gene_encoder_input_dim = (
+            512
+            if embed_gene
+            else self.n_perts
         )
+        decoder_input_dim = (
+            latent_dim + (n_total_covariates or 0) if inject_covariates_decoder else latent_dim
+        )
+        
 
         self.gene_encoder = MLP(
             encoder_input_dim, encoder_width, latent_dim, n_layers, dropout
@@ -127,7 +187,7 @@ class LatentAdditive(PerturbationModel):
             decoder_input_dim, encoder_width, self.n_genes, n_layers, dropout
         )
         self.pert_encoder = MLP(
-            self.n_perts, encoder_width, latent_dim, n_layers, dropout
+            gene_encoder_input_dim, pert_encoder_width, latent_dim, n_layers, dropout
         )
 
         if sparse_additive_mechanism:
@@ -141,6 +201,50 @@ class LatentAdditive(PerturbationModel):
         self.inject_covariates_encoder = inject_covariates_encoder
         self.inject_covariates_decoder = inject_covariates_decoder
 
+    def get_perturbation_embedding(self, perturbation: torch.Tensor) -> torch.Tensor:
+        """
+        Given a (batch_size, n_perts) multi-hot perturbation tensor, returns the summed gene embeddings for each cell.
+        """
+
+        if perturbation.dim() == 1:
+            perturbation = perturbation.unsqueeze(0)
+        batch_size, n_perts = perturbation.shape
+        device = perturbation.device
+        # Get indices of nonzero perturbations for each cell (allows multiple perturbations per cell)
+        pert_indices = (perturbation > 0).nonzero(as_tuple=False)  # (num_nonzero, 2): [cell_idx, pert_idx]
+        cell_ids = pert_indices[:, 0]
+        pert_ids = pert_indices[:, 1]
+        
+        
+        # Map pert_idx to scGPT vocab id
+        scgpt_ids = self.pert_to_scgpt_tensor[pert_ids].to(device)
+                
+        # Get embeddings for all scGPT ids
+        all_embeddings = self.gene_embedding(scgpt_ids)  # (num_nonzero, emb_dim)
+        
+        # REPLACE WITH RANDOM VECTORS FOR TESTING
+        if self.debug_zero_embeddings:
+            all_embeddings = torch.zeros_like(all_embeddings)
+        
+        
+        # Check if embeddings are all zeros or very similar
+        if all_embeddings.abs().max() < 1e-6:
+            print("WARNING: All embeddings are essentially zero!")
+        elif all_embeddings.std() < 1e-3:
+            print("WARNING: Embeddings have very low variance - they might not be meaningful!")
+        
+        # Sum embeddings for each cell
+        emb_dim = all_embeddings.shape[1]
+        perturbation_emb = torch.zeros((batch_size, emb_dim), device=device)
+        perturbation_emb.index_add_(0, cell_ids, all_embeddings)
+
+        # Optionally: warn if any cell has more than one perturbation
+        per_cell_counts = torch.bincount(cell_ids, minlength=batch_size)
+        if (per_cell_counts > 1).any():
+            raise ValueError("Multiple perturbations per cell are not yet supported")
+        
+        return perturbation_emb
+
     def forward(
         self,
         control_input: torch.Tensor,
@@ -152,17 +256,22 @@ class LatentAdditive(PerturbationModel):
                 [cov.squeeze() for cov in covariates.values()], dim=1
             )
 
+        # Store original perturbation for sparse additive mechanism
+        original_perturbation = perturbation
+        
+        
+        if self.embed_gene:
+            perturbation = self.get_perturbation_embedding(perturbation)
+
         if self.inject_covariates_encoder:
             control_input = torch.cat([control_input, merged_covariates], dim=1)
 
         latent_control = self.gene_encoder(control_input)
         latent_perturbation = self.pert_encoder(perturbation)
 
-        if self.debug_zero_embeddings:
-            latent_perturbation = torch.zeros_like(latent_perturbation)
-
         if self.sparse_additive_mechanism:
-            mask = self.mask_encoder(perturbation)
+            # Use original perturbation tensor for mask encoder
+            mask = self.mask_encoder(original_perturbation)
             latent_perturbation = mask * latent_perturbation
 
         latent_perturbed = latent_control + latent_perturbation

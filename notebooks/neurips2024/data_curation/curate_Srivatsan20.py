@@ -13,9 +13,6 @@ import os
 from perturbench.analysis.utils import get_ensembl_mappings
 from perturbench.analysis.preprocess import preprocess
 
-get_ipython().run_line_magic('reload_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
-
 
 # Download from: https://zenodo.org/records/7041849/files/SrivatsanTrapnell2020_sciplex3.h5ad?download=1
 
@@ -23,7 +20,7 @@ get_ipython().run_line_magic('autoreload', '2')
 
 
 data_url = 'https://zenodo.org/records/7041849/files/SrivatsanTrapnell2020_sciplex3.h5ad?download=1'
-data_cache_dir = '../perturbench_data' ## Change this to your local data directory
+data_cache_dir = '/cluster/scratch/fluebeck/perturbench_data' ## Change this to your local data directory
 
 if not os.path.exists(data_cache_dir):
     os.makedirs(data_cache_dir)

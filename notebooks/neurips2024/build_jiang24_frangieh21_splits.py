@@ -15,14 +15,11 @@ from perturbench.data.datasplitter import PerturbationDataSplitter
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
-
 
 # In[10]:
 
 
-data_cache_dir = 'perturbench_data/'
+data_cache_dir = '/cluster/scratch/fluebeck/perturbench_data'
 
 
 # ## Jiang24

@@ -41,7 +41,7 @@ class Accessor():
         self,
         dataset_url,
         dataset_name,
-        data_cache_dir='../perturbench_data',
+        data_cache_dir='/cluster/scratch/fluebeck/perturbench_data',
     ):
         self.dataset_url = dataset_url
         self.dataset_name = dataset_name

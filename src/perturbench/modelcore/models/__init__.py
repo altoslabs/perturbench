@@ -7,3 +7,4 @@ from .biolord import BiolordStar
 from .average import Average
 from .cpa import CPA
 from .embedding import EmbeddingModel
+from .latent_additive_gene_embedding import LatentAdditiveEmbedding

@@ -8,7 +8,7 @@ from perturbench.data.accessors.base import Accessor
 
 class Norman19(Accessor):
 
-    def __init__(self, data_cache_dir='../perturbench_data'):
+    def __init__(self, data_cache_dir='/cluster/scratch/fluebeck/perturbench_data'):
         super().__init__(
             data_cache_dir=data_cache_dir,
             dataset_url='https://zenodo.org/records/7041849/files/NormanWeissman2019_filtered.h5ad?download=1',

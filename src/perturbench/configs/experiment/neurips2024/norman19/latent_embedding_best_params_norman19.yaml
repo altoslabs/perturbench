@@ -4,7 +4,7 @@
 # python train.py experiment=example
 
 defaults:
-  - override /model: latent_additive
+  - override /model: latent_additive_embedding
   - override /data: norman19
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -29,3 +29,7 @@ model:
   lr: 6.779597503293815e-05
   n_layers: 1
   wd: 1.0406767176550133e-08
+  pert_encoder_width: 512
+  embed_cell: false
+  embed_gene: true
+  debug_zero_embeddings: false

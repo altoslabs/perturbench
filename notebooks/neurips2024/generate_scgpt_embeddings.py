@@ -94,7 +94,7 @@ adata_copy_embeddings.X.shape
 # In[60]:
 
 
-adata.obsm['scgpt_embbeddings'] = adata_copy_embeddings.X
+adata.obsm['scgpt_embeddings'] = adata_copy_embeddings.X
 
 
 # In[61]:
@@ -174,7 +174,7 @@ adata_copy_embeddings = scg.tasks.embed_data(
 # In[24]:
 
 
-adata.obsm['scgpt_embbeddings'] = adata_copy_embeddings.X
+adata.obsm['scgpt_embeddings'] = adata_copy_embeddings.X
 
 
 # In[25]:
@@ -210,7 +210,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import anndata
 
-embedding_data = anndata.AnnData(X=adata.obsm['scgpt_embbeddings'])
+embedding_data = anndata.AnnData(X=adata.obsm['scgpt_embeddings'])
 
 # Run UMAP
 sc.pp.neighbors(embedding_data, use_rep='X')
@@ -273,7 +273,7 @@ adata_copy_embeddings = scg.tasks.embed_data(
 # In[19]:
 
 
-adata.obsm['scgpt_embbeddings'] = adata_copy_embeddings.X
+adata.obsm['scgpt_embeddings'] = adata_copy_embeddings.X
 
 
 # In[20]:

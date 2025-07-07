@@ -18,7 +18,7 @@ trainer:
 
 data:
   datapath: ${paths.data_dir}/srivatsan20_highest_dose_preprocessed_with_embeddings.h5ad
-  embedding_key: scgpt_embbeddings
+  embedding_key: scgpt_embeddings
   add_controls: False
 
 model:

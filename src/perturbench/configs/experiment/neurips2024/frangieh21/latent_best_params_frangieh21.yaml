@@ -21,3 +21,4 @@ model:
   n_perts: null
   softplus_output: true
   wd: 1.564792695502722e-07
+  debug_zero_embeddings: false

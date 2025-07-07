@@ -32,7 +32,7 @@ library(Matrix)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 ## Data cache directory
-data_cache_dir = '../perturbench_data' ## Change this to your local data directory
+data_cache_dir = '/cluster/scratch/fluebeck/perturbench_data' ## Change this to your local data directory
 
 ## GXE1
 gxe1_cds_path = paste0(data_cache_dir, "/GSM7056148_sciPlexGxE_1_preprocessed_cds.rds.gz", sep="")
