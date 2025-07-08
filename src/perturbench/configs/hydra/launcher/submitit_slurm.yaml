@@ -6,13 +6,13 @@ tasks_per_node: 1
 mem_gb: null
 nodes: 1
 mem_per_gpu: null
-mem_per_cpu: 12G
+mem_per_cpu: 64G
 account: ls_krausea
 name: ${hydra.job.name}
 constraint: null # rtx_4090
 array_parallelism: 256
-gres: gpumem:32g
+# gres: gpumem:32g
 additional_parameters:
-  # gpus: rtx_4090:1 # replace this with the gpu mem via gres
-  gpus: 1
+  gpus: rtx_4090:1 # replace this with the gpu mem via gres
+  # gpus: 1
   account: ls_krausea

@@ -23,5 +23,5 @@ model:
   softplus_output: true
   wd: 1.564792695502722e-07
   embed_cell: false
-  embed_gene: true
+  embed_gene: false
   debug_zero_embeddings: false

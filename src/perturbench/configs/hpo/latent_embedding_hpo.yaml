@@ -22,5 +22,5 @@ hydra:
     params:
       model.encoder_width: choice(1280, 2304, 5376)
       model.latent_dim: choice(64, 192, 256, 512)
-      model.embed_gene: false
+      model.embed_gene: true
       seed: choice(0, 245)

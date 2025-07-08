@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem-per-cpu=64G
 #SBATCH --gpus=1
-#SBATCH --gres=gpumem:10g
+#SBATCH --gres=gpumem:40g
 
 
 export HYDRA_FULL_ERROR=1

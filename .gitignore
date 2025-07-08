@@ -190,3 +190,6 @@ tensorboard/
 
 perturbench_data/
 assets/
+
+# anything containing "tmp"
+*tmp*
