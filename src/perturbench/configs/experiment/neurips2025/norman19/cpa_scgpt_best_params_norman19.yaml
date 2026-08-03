@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: norman19
+  - override /data: norman19_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -19,9 +19,10 @@ trainer:
 data:
   splitter:
     max_heldout_fraction_per_covariate: 0.7
-  datapath: ${paths.data_dir}/norman19_processed_scgpt.h5ad
-  embedding_key: X_scgpt
-  add_controls: False
+  data:
+    filename: ${paths.data_dir}/norman19_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt
 
 model:
   adv_classifier_hidden_dim: 837

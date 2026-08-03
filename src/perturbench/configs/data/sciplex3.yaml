@@ -1,17 +1,27 @@
 defaults:
-  - transform: linear_model_pipeline
+  - transform: linear_model_pipeline_controls
   - splitter: cell_type_transfer_task
   - evaluation: default
 
+# The type of data module to use
 _target_: perturbench.data.modules.AnnDataLitModule
-datapath: ${paths.data_dir}/sciplex3_processed.h5ad
-perturbation_key: condition
-perturbation_combination_delimiter: +
-perturbation_control_value: control
-covariate_keys: [cell_type]
-batch_size: 4000
-num_workers: 8
-batch_sample: True
-add_controls: True
-use_counts: False
-embedding_key: null
+
+# Arguments to the data accessor
+data:
+  filename: ${paths.data_dir}/sciplex3_processed.h5ad
+
+# Arguments to the data iterator (dataset/datapipe)
+data_iter_factory:
+  _target_: perturbench.data.datasets.SingleCellPerturbationWithControls.from_anndata
+  _partial_: True
+  perturbation_key: condition
+  perturbation_combination_delimiter: +
+  perturbation_control_value: control
+  covariate_keys: [cell_type]
+  embedding_key: null
+  feature_filter_path: null
+
+mode: batch
+loader:
+  batch_size: 4000
+  num_workers: 8

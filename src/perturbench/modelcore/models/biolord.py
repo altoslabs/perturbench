@@ -1,67 +1,40 @@
-"""
-BSD 3-Clause License
-
-Copyright (c) 2024, <anonymized authors of NeurIPS submission #1306>
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-
 import torch
 import torch.nn.functional as F
-import lightning as L
+from omegaconf import DictConfig
 
 from ..nn.mlp import MLP
 from .base import PerturbationModel
 from perturbench.data.types import Batch
+from perturbench.data.transforms.base import Dispatch
 
 
 class BiolordStar(PerturbationModel):
     """
     A version of Biolord
     """
+    COMPATIBLE_DATASETS = (
+        'SingleCellPerturbation',
+    )
 
     def __init__(
-        self,
-        n_genes: int,
-        n_perts: int,
-        n_layers: int = 2,
-        encoder_width: int = 128,
-        latent_dim: int = 32,
-        penalty_weight: float = 10000.0,
-        noise: float = 0.1,
-        lr: float | None = None,
-        wd: float | None = None,
-        lr_scheduler_freq: int | None = None,
-        lr_scheduler_interval: str | None = None,
-        lr_scheduler_patience: int | None = None,
-        lr_scheduler_factor: float | None = None,
-        dropout: float | None = None,
-        softplus_output: bool = True,
-        n_total_covariates: int | None = None,
-        datamodule: L.LightningDataModule | None = None,
+            self,
+            n_genes: int,
+            n_perts: int,
+            transform: Dispatch,
+            context: dict,
+            evaluation: DictConfig,
+            embedding_width: int | None = None,
+            n_layers: int = 2,
+            encoder_width: int = 128,
+            latent_dim: int = 32,
+            penalty_weight: float = 10000.0,
+            noise: float = 0.1,
+            lr: float | None = None,
+            wd: float | None = None,
+            lr_scheduler: DictConfig | None = None,
+            dropout: float | None = None,
+            softplus_output: bool = True,
+            **kwargs,
     ):
         """
         The constructor for the BiolordStar class.
@@ -88,41 +61,38 @@ class BiolordStar(PerturbationModel):
             datamodule: The datamodule used to train the model
         """
         super(BiolordStar, self).__init__(
-            datamodule=datamodule,
+            n_genes=n_genes,
+            n_perts=n_perts,
+            transform=transform,
+            context=context,
+            evaluation=evaluation,
             lr=lr,
             wd=wd,
-            lr_scheduler_interval=lr_scheduler_interval,
-            lr_scheduler_freq=lr_scheduler_freq,
-            lr_scheduler_patience=lr_scheduler_patience,
-            lr_scheduler_factor=lr_scheduler_factor,
+            lr_scheduler=lr_scheduler,
         )
-        self.save_hyperparameters(ignore=["datamodule"])
+        self.save_hyperparameters()
 
         if n_genes is not None:
             self.n_genes = n_genes
         if n_perts is not None:
             self.n_perts = n_perts
 
-        # Create separate embedding for each covariate type
-        covariate_uniques = datamodule.train_context["covariate_uniques"]
-        self.lord_embedding = torch.nn.ParameterDict()
-        for cov, unique_covs in covariate_uniques.items():
-            self.lord_embedding[cov] = torch.nn.Parameter(
-                torch.randn(latent_dim, len(unique_covs))
+        # Check for continuous covariates (None uniques) which are not supported
+        continuous_covs = [k for k, v in context["covariate_uniques"].items() if v is None]
+        if continuous_covs:
+            raise ValueError(
+                f"BioLord does not support continuous covariates. "
+                f"Found continuous covariates: {continuous_covs}"
             )
 
-        # Decoder input: latent expression + latent perturbation + latent covariates (one per covariate type)
-        n_covariate_types = len(covariate_uniques)
-        decoder_input_dim = (2 + n_covariate_types) * latent_dim
-        self.gene_encoder = MLP(
-            self.n_genes, encoder_width, latent_dim, n_layers, dropout
-        )
-        self.decoder = MLP(
-            decoder_input_dim, encoder_width, self.n_genes, n_layers, dropout
-        )
-        self.pert_encoder = MLP(
-            self.n_perts, encoder_width, latent_dim, n_layers, dropout
-        )
+        self.lord_embedding = torch.nn.ParameterDict()
+        for cov, unique_covs in context["covariate_uniques"].items():
+            self.lord_embedding[cov] = torch.nn.Parameter(torch.randn(latent_dim, len(unique_covs)))
+
+        decoder_input_dim = 3 * latent_dim
+        self.gene_encoder = MLP(self.n_genes, encoder_width, latent_dim, n_layers, dropout)
+        self.decoder = MLP(decoder_input_dim, encoder_width, self.n_genes, n_layers, dropout)
+        self.pert_encoder = MLP(self.n_perts, encoder_width, latent_dim, n_layers, dropout)
 
         self.penalty_weight = penalty_weight
         self.noise = noise
@@ -130,42 +100,31 @@ class BiolordStar(PerturbationModel):
         self.softplus_output = softplus_output
 
     def forward(
-        self,
-        observed_perturbed_expression: torch.Tensor,
-        perturbation: torch.Tensor,
-        covariates: dict[str, torch.Tensor],
+            self,
+            observed_perturbed_expression: torch.Tensor,
+            perturbation: torch.Tensor,
+            covariates: dict[str, torch.Tensor],
     ):
-        latent_observed_perturbed_expression = self.gene_encoder(
-            observed_perturbed_expression
-        )
-        latent_observed_perturbed_expression += self.noise * torch.randn_like(
-            latent_observed_perturbed_expression
-        )
+        latent_observed_perturbed_expression = self.gene_encoder(observed_perturbed_expression)
+        latent_observed_perturbed_expression += self.noise * torch.randn_like(latent_observed_perturbed_expression)
         latent_perturbation = self.pert_encoder(perturbation)
 
-        # Process all covariates dynamically
         latent_covariates_list = []
         for cov, cov_values in covariates.items():
-            latent_covariates_list.append(
-                torch.vstack(
-                    [self.lord_embedding[cov][:, val.bool()].T for val in cov_values]
-                )
-            )
+            latent_covariates_list.append(torch.vstack(
+                [self.lord_embedding[cov][:, val.bool()].T for val in cov_values]
+            ))
         latent_covariates = torch.hstack(latent_covariates_list)
-        latent_perturbed_expression = torch.cat(
-            [
-                latent_observed_perturbed_expression,
-                latent_perturbation,
-                latent_covariates,
-            ],
-            dim=-1,
-        )
+
+        latent_perturbed_expression = torch.cat([
+            latent_observed_perturbed_expression, latent_perturbation, latent_covariates
+        ], dim=-1)
 
         predicted_perturbed_expression = self.decoder(latent_perturbed_expression)
 
         if self.softplus_output:
             predicted_perturbed_expression = F.softplus(predicted_perturbed_expression)
-        return predicted_perturbed_expression, (latent_covariates**2).sum()
+        return predicted_perturbed_expression, (latent_covariates ** 2).sum()
 
     def training_step(self, batch: Batch, batch_idx: int):
         observed_perturbed_expression = batch.gene_expression.squeeze()
@@ -175,15 +134,8 @@ class BiolordStar(PerturbationModel):
         predicted_perturbed_expression, penalty = self.forward(
             observed_perturbed_expression, perturbation, covariates
         )
-        loss = (
-            F.mse_loss(
-                predicted_perturbed_expression,
-                observed_perturbed_expression,
-                reduction="none",
-            )
-            .sum(axis=1)
-            .mean()
-        )
+        loss = F.mse_loss(predicted_perturbed_expression, observed_perturbed_expression, reduction='none').sum(
+            axis=1).mean()
         self.log("train_loss", loss, prog_bar=True, logger=True, batch_size=len(batch))
         return loss + self.penalty_weight * penalty
 
@@ -195,15 +147,8 @@ class BiolordStar(PerturbationModel):
         predicted_perturbed_expression, penalty = self.forward(
             observed_perturbed_expression, perturbation, covariates
         )
-        val_loss = (
-            F.mse_loss(
-                predicted_perturbed_expression,
-                observed_perturbed_expression,
-                reduction="none",
-            )
-            .sum(axis=1)
-            .mean()
-        )
+        val_loss = F.mse_loss(predicted_perturbed_expression, observed_perturbed_expression, reduction='none').sum(
+            axis=1).mean()
         self.log(
             "val_loss",
             val_loss,

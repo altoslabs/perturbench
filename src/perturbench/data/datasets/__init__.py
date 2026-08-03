@@ -1,2 +1,2 @@
-from .singlecell import SingleCellPerturbation, SingleCellPerturbationWithControls
+from .inmemory import SingleCellPerturbation, SingleCellPerturbationWithControls
 from .population import Counterfactual, CounterfactualWithReference

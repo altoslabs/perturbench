@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: norman19
+  - override /data: norman19_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -19,7 +19,6 @@ trainer:
 data:
   splitter:
     max_heldout_fraction_per_covariate: 0.7
-  add_controls: False
 
 model:
   adv_classifier_hidden_dim: 776

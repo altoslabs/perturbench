@@ -4,6 +4,7 @@ import numpy as np
 import scipy
 from scipy.sparse import csr_matrix, issparse
 import anndata as ad
+from pandas.api.types import is_numeric_dtype
 
 from ..utils import merge_cols
 from ._rank_genes_helpers import rank_genes_groups_control_var
@@ -204,6 +205,24 @@ def aggregate_adata(
     for col in cov_cols:
         assert col in adata.obs.columns
     covs = merge_cols(adata.obs, cov_cols, delim=delim)
+
+    # Identify categorical vs continuous covariates for control matching
+    # Controls are matched only on categorical covariates (not continuous ones like dose/time)
+    categorical_cov_cols = [c for c in cov_cols if not is_numeric_dtype(adata.obs[c])]
+
+    # Create categorical-only covariate column for control matching
+    if len(categorical_cov_cols) > 0:
+        categorical_covs = merge_cols(adata.obs, categorical_cov_cols, delim=delim)
+    else:
+        # No categorical covariates - all cells share the same control pool
+        categorical_covs = pd.Series('_all_', index=adata.obs.index).astype('category')
+
+    # Build mapping: full_cov -> categorical_cov for control lookup
+    cov_to_categorical = {}
+    for cov in covs.cat.categories:
+        # Find the first row with this covariate combo to get categorical values
+        idx = (covs == cov).idxmax()
+        cov_to_categorical[cov] = categorical_covs[idx]
     
     # Handle PCA aggregation separately
     if aggr_method in ['pca', 'pca_average']:
@@ -213,8 +232,15 @@ def aggregate_adata(
         
     result_dict = {}
     for cov in covs.cat.categories:
+        cov_adata_full = adata[covs == cov, :]
+        # Skip covariate combinations with only control cells (no perturbations to aggregate)
+        cov_perts = cov_adata_full.obs[pert_col].unique()
+        non_ctrl_perts = [p for p in cov_perts if p != ctrl]
+        if len(non_ctrl_perts) == 0:
+            continue  # Skip control-only covariate combinations
+
         result_dict[cov] = {}
-        if len(adata[covs == cov,:].obs[pert_col].unique()) > 1:
+        if len(cov_perts) > 1:  # Has both controls and perturbations
             ## Handle reductions that result in a matrix of cell expression per perturbation
             if aggr_method in ['pca', 'pca_average', 'none']:
                 if aggr_method in ['pca', 'pca_average']:
@@ -254,8 +280,14 @@ def aggregate_adata(
                         **kwargs,
                     )
                 elif aggr_method == 'logfc':
+                    # For logfc, combine perturbed cells (exact cov match) with controls (categorical match)
+                    categorical_cov = cov_to_categorical[cov]
+                    perturbed_mask = (covs == cov) & (adata.obs[pert_col] != ctrl)
+                    control_mask = (categorical_covs == categorical_cov) & (adata.obs[pert_col] == ctrl)
+                    subset_adata = adata[perturbed_mask | control_mask, :]
+
                     aggr_cov = _logfc_helper(
-                        adata[covs == cov,:],
+                        subset_adata,
                         pert_col=pert_col,
                         delim=delim,
                         pseudocount=pseudocount,
@@ -273,8 +305,14 @@ def aggregate_adata(
                     )
                 
                 elif aggr_method in ['scores', 'pvals', 'logp']:
+                    # For DE analysis, combine perturbed cells (exact cov match) with controls (categorical match)
+                    categorical_cov = cov_to_categorical[cov]
+                    perturbed_mask = (covs == cov) & (adata.obs[pert_col] != ctrl)
+                    control_mask = (categorical_covs == categorical_cov) & (adata.obs[pert_col] == ctrl)
+                    subset_adata = adata[perturbed_mask | control_mask, :]
+
                     deg_df = _differential_expression_helper(
-                        adata[covs == cov,:],
+                        subset_adata,
                         pert_col=pert_col,
                         ctrl=ctrl,
                         de_method=de_method,

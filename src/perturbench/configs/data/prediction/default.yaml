@@ -1,0 +1,17 @@
+# Path to prediction dataframe
+prediction_dataframe_path: ???
+
+# Number of perturbations to generate at a time
+chunk_size: 20
+
+# Arguments to the data iterator (dataset/datapipe) to use for prediction
+predict_data_iter_factory:
+  _target_: perturbench.data.datasets.Counterfactual.from_anndata
+  _partial_: True
+  max_control_cells_per_covariate: 1000
+  perturbation_key: "${data.data_iter_factory.perturbation_key}"
+  perturbation_control_value: "${data.data_iter_factory.perturbation_control_value}"
+  covariate_keys: "${data.data_iter_factory.covariate_keys}"
+  embedding_key: "${data.data_iter_factory.embedding_key}"
+  seed: "${seed}"
+  feature_filter_path: "${data.data_iter_factory.feature_filter_path}"

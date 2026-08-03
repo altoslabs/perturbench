@@ -1,0 +1,37 @@
+split_value_to_evaluate: val
+
+test_data_iter_factory:
+  _target_: data.datasets.CounterfactualWithReference.from_h5
+  _partial_: True
+  max_control_cells_per_covariate: 1000
+  perturbation_key: "${data.data_iter_factory.perturbation_key}"
+  perturbation_control_value: "${data.data_iter_factory.perturbation_control_value}"
+  covariate_keys: "${data.data_iter_factory.covariate_keys}"
+  embedding_key: "${data.data_iter_factory.embedding_key}"
+  feature_filter_path: "${data.data_iter_factory.feature_filter_path}"
+  seed: "${seed}"
+  
+evaluation_pipelines:
+  - aggregation: average
+    metric: rmse
+    rank: True
+
+  - aggregation: logfc
+    metric: cosine
+    rank: True
+
+  - aggregation: scores
+    metric: top_k_recall
+    rank: False
+  
+  - aggregation: pca
+    metric: mmd
+    rank: False
+
+save_evaluation: True
+save_dir: "${paths.output_dir}/evaluation/"
+chunk_size: 20
+print_summary: True
+use_synthetic_controls: False
+use_control_variance: False
+run_cell_eval: True

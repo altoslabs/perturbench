@@ -1,5 +1,16 @@
 split_value_to_evaluate: test
 
+test_data_iter_factory:
+  _target_: perturbench.data.datasets.CounterfactualWithReference.from_anndata
+  _partial_: True
+  max_control_cells_per_covariate: 1000
+  perturbation_key: "${data.data_iter_factory.perturbation_key}"
+  perturbation_control_value: "${data.data_iter_factory.perturbation_control_value}"
+  covariate_keys: "${data.data_iter_factory.covariate_keys}"
+  embedding_key: "${data.data_iter_factory.embedding_key}"
+  feature_filter_path: "${data.data_iter_factory.feature_filter_path}"
+  seed: "${seed}"
+
 evaluation_pipelines:
   - aggregation: average
     metric: rmse
@@ -20,13 +31,15 @@ evaluation_pipelines:
   - aggregation: scores
     metric: top_k_recall
     rank: False
-  
+
   - aggregation: pca
     metric: mmd
     rank: True
 
-max_control_cells_per_covariate: 1000
 save_evaluation: True
 save_dir: "${paths.output_dir}/evaluation/"
 chunk_size: 400
 print_summary: True
+use_synthetic_controls: False
+use_control_variance: False
+run_cell_eval: True

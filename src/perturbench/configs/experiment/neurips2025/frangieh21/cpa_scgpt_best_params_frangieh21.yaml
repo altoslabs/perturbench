@@ -3,7 +3,7 @@
 defaults:
 - override /model: cpa
 - override /callbacks: default
-- override /data: frangieh21
+- override /data: frangieh21_no_controls
 
 trainer:
   max_epochs: 400
@@ -30,6 +30,7 @@ model:
   wd: 7.097486120374588e-08
 
 data:
-  add_controls: false
-  datapath: ${paths.data_dir}/frangieh21_processed_scgpt.h5ad
-  embedding_key: X_scgpt
+  data:
+    filename: ${paths.data_dir}/frangieh21_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt

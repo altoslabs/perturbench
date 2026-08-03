@@ -1,0 +1,8 @@
+conf:
+  _target_: perturbench.data.transforms.pipelines.LinearModelPipelineControls
+  _partial_: true
+dependencies:
+  perturbation_uniques: perturbation_uniques
+  covariate_uniques: covariate_uniques
+  use_perturbation_embedding: use_perturbation_embedding
+

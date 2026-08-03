@@ -1,0 +1,34 @@
+defaults:
+  - transform: linear_model_pipeline
+  - splitter: saved_split
+  - evaluation: h5
+  - prediction: h5
+
+_target_: data.modules.H5LitModule
+
+data:
+  filename:
+    - ${paths.data_dir}/preprocessed_dataset_1.h5ad
+    - ${paths.data_dir}/preprocessed_dataset_2.h5ad
+    - ${paths.data_dir}/preprocessed_dataset_3.h5ad
+  append_dataset_to_index: true
+
+data_iter_factory:
+  _target_: data.datasets.h5.SingleCellPerturbation.from_h5
+  _partial_: True
+  perturbation_key: condition
+  perturbation_combination_delimiter: +
+  perturbation_control_value: control
+  covariate_keys: [cell_type, treatment, dataset]
+  embedding_key: null
+  cache_size: 0
+  feature_filter_path: ${paths.data_dir}/gene_features.csv  # or set it to null
+
+splitter:
+  split_path: ${paths.data_dir}/train_val_test_split.csv
+
+mode: batch
+loader:
+  batch_size: 128
+  persistent_workers: True
+  num_workers: 8

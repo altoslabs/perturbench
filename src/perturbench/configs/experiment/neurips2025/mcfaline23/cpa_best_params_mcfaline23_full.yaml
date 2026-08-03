@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: mcfaline23
+  - override /data: mcfaline23_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -19,8 +19,9 @@ trainer:
 data:
   evaluation:
     chunk_size: 5
-  batch_size: 8000
-  num_workers: 12
+  loader:
+    batch_size: 8000
+    num_workers: 12
   splitter:
     split_path: ${paths.data_dir}/mcfaline23_gxe_splits/full_covariate_split.csv
 

@@ -3,7 +3,7 @@
 defaults:
 - override /model: cpa
 - override /callbacks: default
-- override /data: jiang24
+- override /data: jiang24_no_controls
 
 trainer:
   max_epochs: 400
@@ -29,6 +29,3 @@ model:
   softplus_output: false
   variational: true
   wd: 3.693112285894233e-07
-
-data:
-  add_controls: false

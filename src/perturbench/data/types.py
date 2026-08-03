@@ -27,8 +27,10 @@ class Example(NamedTuple):
     id: str | None = None
     # A list of gene names of length num_genes
     gene_names: Sequence[str] | None = None
-    # Optional foundation model embeddings
+    # Optional cell embeddings (e.g. from a foundation model)
     embeddings: np.ndarray | None = None
+    # Optional control cell embeddings (e.g. from a foundation model)
+    control_embeddings: np.ndarray | None = None
 
 
 class Batch(NamedTuple):
@@ -41,6 +43,7 @@ class Batch(NamedTuple):
     id: Sequence[str] | None = None
     gene_names: Sequence[str] | None = None
     embeddings: np.ndarray | None = None
+    control_embeddings: np.ndarray | None = None
 
 
 class FrozenDictKeyMap(dict):
@@ -81,6 +84,27 @@ class FrozenDictKeyMap(dict):
             _data = []
         super().__init__(_data)
 
+    @staticmethod
+    def _to_frozen_key(key: dict) -> frozenset:
+        """Convert a dict key to a frozenset for use as a hash key.
+
+        Args:
+            key: a dictionary with hashable values.
+
+        Returns:
+            A frozenset of the key's items.
+
+        Raises:
+            TypeError: if any value in the dict is not hashable.
+        """
+        try:
+            return frozenset(key.items())
+        except TypeError as e:
+            raise TypeError(
+                f"FrozenDictKeyMap keys must have hashable values. "
+                f"Got unhashable value in: {key}"
+            ) from e
+
     def __getitem__(self, key: dict) -> Any:
         """Get the value associated with the key.
 
@@ -92,7 +116,7 @@ class FrozenDictKeyMap(dict):
         """
         if isinstance(key, frozenset):
             key = dict(key)
-        return super().__getitem__(frozenset(key.items()))
+        return super().__getitem__(self._to_frozen_key(key))
 
     def __setitem__(self, key: dict, value: Any) -> None:
         """Set the value associated with the key.
@@ -103,4 +127,17 @@ class FrozenDictKeyMap(dict):
         """
         if isinstance(key, frozenset):
             key = dict(key)
-        super().__setitem__(frozenset(key.items()), value)
+        super().__setitem__(self._to_frozen_key(key), value)
+
+    def __contains__(self, key: dict) -> bool:
+        """Check if the key is in the dictionary.
+
+        Args:
+            key: a dictionary.
+
+        Returns:
+            True if the key is in the dictionary, False otherwise.
+        """
+        if isinstance(key, frozenset):
+            key = dict(key)
+        return super().__contains__(self._to_frozen_key(key))

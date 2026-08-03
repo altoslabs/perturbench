@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: sams_vae
-  - override /data: sciplex3
+  - override /data: sciplex3_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -18,8 +18,8 @@ trainer:
   precision: 32
 
 data:
-  batch_size: 256
-  add_controls: False
+  loader:
+    batch_size: 256
   evaluation:
     chunk_size: 10
 

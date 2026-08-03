@@ -13,7 +13,7 @@ from perturbench.data.datasets import (
     SingleCellPerturbation,
     SingleCellPerturbationWithControls,
 )
-from perturbench.data.transforms.pipelines import SingleCellPipeline
+from perturbench.data.transforms.pipelines import LinearModelPipeline
 
 
 def download_scperturb_adata(data_url, data_cache_dir, filename):
@@ -128,7 +128,7 @@ class Accessor:
         )
 
         if add_default_transforms:
-            dataset.transform = SingleCellPipeline(
+            dataset.transform = LinearModelPipeline(
                 perturbation_uniques=context["perturbation_uniques"],
                 covariate_uniques=context["covariate_uniques"],
             )

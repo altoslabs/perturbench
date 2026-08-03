@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: biolord
-  - override /data: sciplex3
+  - override /data: sciplex3_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -19,8 +19,8 @@ trainer:
   precision: 16
 
 data:
-  batch_size: 1000
-  add_controls: False
+  loader:
+    batch_size: 1000
 
 model:
   dropout: 0.4

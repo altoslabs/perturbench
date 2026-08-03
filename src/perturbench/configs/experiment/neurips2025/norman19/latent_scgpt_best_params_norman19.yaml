@@ -19,8 +19,10 @@ trainer:
 data:
   splitter:
     max_heldout_fraction_per_covariate: 0.7
-  datapath: ${paths.data_dir}/norman19_processed_scgpt.h5ad
-  embedding_key: X_scgpt
+  data:
+    filename: ${paths.data_dir}/norman19_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt
 
 model:
   inject_covariates_encoder: False

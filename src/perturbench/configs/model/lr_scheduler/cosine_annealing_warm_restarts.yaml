@@ -1,0 +1,8 @@
+conf:  
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  _partial_: True
+  T_0: 50
+  T_mult: 1
+
+dependencies:
+  optimizer: optimizer

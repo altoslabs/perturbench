@@ -13,7 +13,7 @@ T = TypeVar("T", Logger, Callback)
 
 
 def multi_instantiate(
-    cfg: DictConfig, context: dict[str, Any] | None = None
+        cfg: DictConfig, context: dict[str, Any] | None = None
 ) -> List[T]:
     """Instantiates multiple classes from config.
 
@@ -56,7 +56,7 @@ def multi_instantiate(
     if not isinstance(cfg, DictConfig):
         raise TypeError("Config must be a DictConfig!")
 
-    for _, conf in cfg.items():
+    for name, conf in cfg.items():
         target_name = conf.__class__.__name__
         instance_dependencies = {}
         # Resolve dependencies if requested
@@ -81,7 +81,7 @@ def multi_instantiate(
             # pylint: disable-next=protected-access
             target_name = conf.func.__name__ if callable(conf) else conf._target_
 
-        log.info("Instantiating an object of type <%s>", target_name)
+        log.info("Instantiating <%s> of type <%s>", name, target_name)
         if isinstance(conf, partial):
             instances.append(conf(**instance_dependencies))
         elif isinstance(conf, DictConfig):
@@ -105,27 +105,53 @@ def multi_instantiate(
     return instances
 
 
+class InvalidConfigError(TypeError):
+    """Raised when the config is invalid."""
+
+
+class ContextError(TypeError):
+    """Raised when there is an error in instantiating a class with dependencies."""
+
+
+class EmptyContextError(ContextError):
+    """Raised when the context is empty but dependencies are requested."""
+
+
+class MissingDependencyError(ContextError):
+    """Raised when a dependency is missing from the context."""
+
+
 def instantiate_with_context(
-    cfg: DictConfig,
-    context: dict[str, Any] | None = None,
+        cfg: DictConfig,
+        context: dict[str, Any] | None = None,
 ) -> Any:
     if not cfg:
         warnings.warn("No configs found! Skipping...")
         return None
 
     if not isinstance(cfg, DictConfig):
-        raise TypeError("Config must be a DictConfig!")
+        raise InvalidConfigError("Config must be a DictConfig!")
 
     if cfg.dependencies:
         if context:
             dependencies = {
                 kwarg: context[key] for kwarg, key in cfg.dependencies.items()
             }
-        else:
-            raise ValueError(
+        elif context is None:
+            raise ContextError(
                 "The config requests dependencies, but none were provided."
             )
+        else:
+            assert isinstance(context, dict)
+            assert len(context) == 0
+            raise EmptyContextError
     else:
         dependencies = {}
 
-    return cfg.conf(**dependencies)
+    try:
+        instance = cfg.conf(**dependencies)
+    except TypeError as exc:
+        raise MissingDependencyError(
+            f"Failed to instantiate {cfg.conf} with dependencies {dependencies}"
+        ) from exc
+    return instance

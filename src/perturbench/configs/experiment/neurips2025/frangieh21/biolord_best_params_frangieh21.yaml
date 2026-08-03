@@ -3,7 +3,7 @@
 defaults:
 - override /model: biolord
 - override /callbacks: default
-- override /data: frangieh21
+- override /data: frangieh21_no_controls
 
 trainer:
   max_epochs: 400
@@ -23,7 +23,7 @@ model:
   wd: 3.8596437745886474e-08
 
 data:
-  add_controls: false
-  batch_size: 1000
+  loader:
+    batch_size: 1000
   evaluation:
     chunk_size: 10

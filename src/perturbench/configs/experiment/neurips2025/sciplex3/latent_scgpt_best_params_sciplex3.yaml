@@ -17,8 +17,10 @@ trainer:
   max_epochs: 500
 
 data:
-  datapath: ${paths.data_dir}/sciplex3_processed_scgpt.h5ad
-  embedding_key: X_scgpt
+  data:
+    filename: ${paths.data_dir}/sciplex3_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt
   
 model:
   lr_scheduler_freq: 5

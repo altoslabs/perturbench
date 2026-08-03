@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: biolord
-  - override /data: norman19
+  - override /data: norman19_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -17,10 +17,10 @@ trainer:
   max_epochs: 500
 
 data:
-  batch_size: 1000
+  loader:
+    batch_size: 1000
   splitter:
     max_heldout_fraction_per_covariate: 0.7
-  add_controls: False
 
 model:
   dropout: 0.4

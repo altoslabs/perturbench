@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: sciplex3
+  - override /data: sciplex3_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -17,9 +17,10 @@ trainer:
   max_epochs: 500
 
 data:
-  datapath: ${paths.data_dir}/sciplex3_processed_scgpt.h5ad
-  embedding_key: X_scgpt
-  add_controls: False
+  data:
+    filename: ${paths.data_dir}/sciplex3_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt
 
 model:
   adv_classifier_hidden_dim: 681

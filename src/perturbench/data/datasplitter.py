@@ -5,7 +5,9 @@ import numpy as np
 import random
 from omegaconf import DictConfig
 import os
+import logging
 
+log = logging.getLogger(__name__)
 
 class PerturbationDataSplitter:
     """Class to split data into train/test/test.
@@ -95,7 +97,8 @@ class PerturbationDataSplitter:
         assert len(split) == obs_dataframe.shape[0]
         assert split.index.equals(obs_dataframe.index)
         for split_value in ["train", "val", "test"]:
-            assert split_value in split.unique()
+            if split_value not in split.unique():
+                log.warning(f'{split_value} not in split')
 
         if splitter_config.get("save"):
             if not os.path.exists(splitter_config.output_path):

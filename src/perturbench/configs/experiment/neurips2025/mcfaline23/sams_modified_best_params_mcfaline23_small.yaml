@@ -3,7 +3,7 @@
 defaults:
 - override /model: sams_vae
 - override /callbacks: default
-- override /data: mcfaline23
+- override /data: mcfaline23_no_controls
 
 trainer:
   max_epochs: 400
@@ -31,7 +31,7 @@ model:
 data:
   splitter:
     split_path: ${paths.data_dir}/mcfaline23_gxe_splits/small_covariate_split.csv
-  add_controls: false
-  batch_size: 256
+  loader:
+    batch_size: 256
   evaluation:
     chunk_size: 10

@@ -3,7 +3,7 @@
 defaults:
 - override /model: cpa
 - override /callbacks: default
-- override /data: frangieh21
+- override /data: frangieh21_no_controls
 
 trainer:
   max_epochs: 400
@@ -28,6 +28,3 @@ model:
   softplus_output: false
   variational: true
   wd: 1.9023489520016998e-05
-
-data:
-  add_controls: false

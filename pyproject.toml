@@ -11,16 +11,18 @@ license = {text = "..."}
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
+# pandas: str.split issue in version 3.0/3.0.3/3.0.4 (https://github.com/pandas-dev/pandas/issues/66341), can affect evaluation
+# cell_eval v0.8.1, MetricsEvaluator no longer takes batch_size argument
 dependencies = [
     'numpy',
     'pyyaml',
-    'pandas',
+    'pandas==2.3.3',
     'anndata',
     'scanpy',
-    'scipy==1.12.0',
+    'scipy',
     'tqdm',
     'lightning',
-    "torch<=2.5.1",
+    "torch",
     "torchvision",
     "tensorboard",
     "hydra-core",
@@ -38,6 +40,10 @@ dependencies = [
     'ray',
     'python-dotenv',
     'geomloss',
+    'pytorch_metric_learning',
+    'pdex>=0.1.28',
+    'cell-eval==0.6.1',
+    'lightning-bolts',
 ]
 dynamic = ["version"]
 

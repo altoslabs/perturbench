@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: sciplex3
+  - override /data: sciplex3_no_controls
   - override /trainer: default
   - override /callbacks: default
 
@@ -41,6 +41,6 @@ model:
 data:
   evaluation:
     split_value_to_evaluate: test
-  batch_size: 12000
-  num_workers: 12
-  add_controls: False
+  loader:
+    batch_size: 12000
+    num_workers: 12

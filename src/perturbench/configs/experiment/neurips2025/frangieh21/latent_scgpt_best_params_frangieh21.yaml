@@ -23,5 +23,7 @@ model:
   wd: 2.0909467656368513e-08
 
 data:
-  datapath: ${paths.data_dir}/frangieh21_processed_scgpt.h5ad
-  embedding_key: X_scgpt
+  data:
+    filename: ${paths.data_dir}/frangieh21_processed_scgpt.h5ad
+  data_iter_factory:
+    embedding_key: X_scgpt

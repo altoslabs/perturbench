@@ -1,5 +1,6 @@
 from typing import Any, Callable
 
+import numpy as np
 import torch
 from scipy.sparse import csr_matrix
 
@@ -9,13 +10,18 @@ from .base import Transform
 class ToDense(Transform):
     """Convert a sparse matrix/tensor to a dense matrix/tensor."""
 
-    def __call__(self, value: torch.Tensor | csr_matrix) -> torch.Tensor:
+    def __call__(self, value: torch.Tensor | csr_matrix | np.ndarray) -> torch.Tensor:
         if isinstance(value, torch.Tensor):
-            return value.to_dense()
+            output = value.to_dense()
         elif isinstance(value, csr_matrix):
-            return torch.Tensor(value.toarray())
+            output = torch.Tensor(value.toarray())
+        elif isinstance(value, np.ndarray):
+            output = torch.Tensor(value)
         else:
-            return value
+            raise TypeError(
+                f"Invalid type for {value}. Must be either a tensor or a csr_matrix."
+            )
+        return output
 
     def __repr__(self):
         return "ToDense"
@@ -24,11 +30,33 @@ class ToDense(Transform):
 class ToFloat(Transform):
     """Convert a tensor to float."""
 
-    def __call__(self, value: torch.Tensor):
-        return value.float()
+    def __call__(self, value: torch.Tensor | np.ndarray | list):
+        if isinstance(value, torch.Tensor):
+            return value.float()
+        elif isinstance(value, np.ndarray):
+            return torch.from_numpy(value.astype(np.float32))
+        elif isinstance(value, list):
+            return torch.from_numpy(np.array(value).astype(np.float32))
+        else:
+            raise TypeError(
+                f"Invalid type for {value}. Must be either a tensor or a numpy array."
+            )
 
     def __repr__(self):
         return "ToFloat"
+
+
+class Unsqueeze(Transform):
+    """Add a dimension at the specified position."""
+
+    def __init__(self, dim: int = -1):
+        self.dim = dim
+
+    def __call__(self, value: torch.Tensor) -> torch.Tensor:
+        return value.unsqueeze(self.dim)
+
+    def __repr__(self):
+        return f"Unsqueeze(dim={self.dim})"
 
 
 class MapApply(Transform):
@@ -41,9 +69,9 @@ class MapApply(Transform):
     transform_map: dict[str, Transform | Callable]
 
     def __init__(
-        self,
-        transforms: dict[str, Transform | Callable],
-        init_params_map: dict | None = None,
+            self,
+            transforms: dict[str, Transform | Callable],
+            init_params_map: dict | None = None,
     ) -> None:
         """Initializes the instance based on passed transforms.
 

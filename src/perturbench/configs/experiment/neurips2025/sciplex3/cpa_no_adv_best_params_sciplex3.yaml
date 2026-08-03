@@ -5,7 +5,7 @@
 
 defaults:
   - override /model: cpa
-  - override /data: sciplex3
+  - override /data: sciplex3_no_controls
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
@@ -15,9 +15,6 @@ seed: 245
 trainer:
   min_epochs: 5
   max_epochs: 500
-
-data:
-  add_controls: False
 
 model:
   use_adversary: False

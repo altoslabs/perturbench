@@ -5,10 +5,12 @@ from typing import Collection, Sequence
 import torch
 import numpy as np
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, MultiLabelBinarizer
-
+from sklearn.exceptions import DataConversionWarning
 from .base import Transform
 from ..types import ExampleMultiLabel, BatchMultiLabel
 
+import warnings
+warnings.filterwarnings("ignore", category=DataConversionWarning)
 
 class OneHotEncode(Transform):
     """One-hot encode a categorical variable.
@@ -34,7 +36,7 @@ class OneHotEncode(Transform):
 
     def __repr__(self):
         _base = super().__repr__()
-        categories = ", ".join(self.one_hot_encoder.categories[0])
+        categories = ", ".join(str(c) for c in self.one_hot_encoder.categories[0])
         return _base.format(categories)
 
 
@@ -57,7 +59,7 @@ class LabelEncode(Transform):
 
     def __repr__(self):
         _base = super().__repr__()
-        categories = ", ".join(self.ordinal_encoder.categories[0])
+        categories = ", ".join(str(c) for c in self.ordinal_encoder.categories[0])
         return _base.format(categories)
 
 
@@ -100,5 +102,5 @@ class MultiLabelEncode(Transform):
 
     def __repr__(self):
         _base = super().__repr__()
-        classes = ", ".join(self.label_binarizer.classes)
+        classes = ", ".join(str(c) for c in self.label_binarizer.classes)
         return _base.format(classes)

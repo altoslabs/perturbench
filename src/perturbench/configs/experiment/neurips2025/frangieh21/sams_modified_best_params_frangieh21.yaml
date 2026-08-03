@@ -3,7 +3,7 @@
 defaults:
 - override /model: sams_vae
 - override /callbacks: default
-- override /data: frangieh21
+- override /data: frangieh21_no_controls
 
 trainer:
   max_epochs: 400
@@ -29,7 +29,7 @@ model:
   wd: 2.0857105211314087e-08
 
 data:
-  add_controls: false
-  batch_size: 256
+  loader:
+    batch_size: 256
   evaluation:
     chunk_size: 10

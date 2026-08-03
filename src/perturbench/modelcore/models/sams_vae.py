@@ -1,15 +1,19 @@
-from typing import Tuple
+from typing import Tuple, Literal
 import torch
 import torch.distributions as dist
-import lightning as L
-import numpy as np
+from omegaconf import DictConfig
 
+from perturbench.data.transforms.base import Dispatch
 from perturbench.data.types import Batch
 from ..nn.vae import BaseEncoder
 from ..nn.mlp import gumbel_softmax_bernoulli
 from .base import PerturbationModel
 from ..nn.decoders import (
+    DeepGaussian,
     DeepIsotropicGaussian,
+    DeepPoisson,
+    DeepPoissonGamma,
+    ZeroInflatedPoissonGamma,
 )
 
 
@@ -45,32 +49,40 @@ class SparseAdditiveVAE(PerturbationModel):
 
     """
 
+    COMPATIBLE_DATASETS = (
+        'SingleCellPerturbation',
+    )
+
     def __init__(
-        self,
-        n_genes: int | None = None,
-        n_perts: int | None = None,
-        n_layers_encoder_x: int = 2,
-        n_layers_encoder_e: int = 2,
-        n_layers_decoder: int = 3,
-        hidden_dim_x: int = 850,
-        hidden_dim_cond: int = 128,
-        latent_dim: int = 40,
-        dropout: float = 0.2,
-        inject_covariates_encoder: bool = False,
-        inject_covariates_decoder: bool = False,
-        mask_prior_probability: float = 0.01,
-        lr: int | None = None,
-        wd: int | None = None,
-        lr_scheduler_freq: int | None = None,
-        lr_scheduler_interval: str | None = None,
-        lr_scheduler_patience: int | None = None,
-        lr_scheduler_factor: float | None = None,
-        softplus_output: bool = True,
-        generative_counterfactual: bool = False,
-        embedding_width: int | None = None,
-        disable_sparsity: bool = False,
-        disable_e_dist: bool = False,
-        datamodule: L.LightningDataModule | None = None,
+            self,
+            n_genes: int,
+            n_perts: int,
+            transform: Dispatch,
+            context: dict,
+            evaluation: DictConfig,
+            n_layers_encoder_x: int = 2,
+            n_layers_encoder_e: int = 2,
+            n_layers_decoder: int = 3,
+            hidden_dim_x: int = 850,
+            latent_dim: int = 40,
+            dropout: float = 0.2,
+            inject_covariates_encoder: bool = False,
+            inject_covariates_decoder: bool = False,
+            mask_prior_probability: float = 0.01,
+            lr: int | None = None,
+            wd: int | None = None,
+            lr_scheduler: DictConfig | None = None,
+            softplus_output: bool = True,
+            generative_counterfactual: bool = False,
+            decoder_distribution: str = 'IsotropicGaussian',
+            library_size: Literal['learned', 'observed'] | None = None,
+            use_legacy_negative_binomial: bool = False,
+            count_based_input_expression: bool = False,
+            dispersion_by_gene_cell: bool = False,
+            embedding_width: int | None = None,
+            disable_sparsity: bool = False,
+            disable_e_dist: bool = False,
+            **kwargs,
     ) -> None:
         """
         Initializes the SparseAdditiveVAE model.
@@ -102,20 +114,26 @@ class SparseAdditiveVAE(PerturbationModel):
         Returns:
             None
         """
-        if datamodule is not None:
-            n_genes = datamodule.num_genes
-            n_perts = datamodule.num_perturbations
-        
         super(SparseAdditiveVAE, self).__init__(
-            datamodule=datamodule,
+            n_genes=n_genes,
+            n_perts=n_perts,
+            transform=transform,
+            context=context,
+            evaluation=evaluation,
             lr=lr,
             wd=wd,
-            lr_scheduler_freq=lr_scheduler_freq,
-            lr_scheduler_interval=lr_scheduler_interval,
-            lr_scheduler_patience=lr_scheduler_patience,
-            lr_scheduler_factor=lr_scheduler_factor,
+            lr_scheduler=lr_scheduler,
+            count_based_input_expression=count_based_input_expression,
+            embedding_width=embedding_width,
         )
-        self.save_hyperparameters(ignore=["datamodule"])
+        self.save_hyperparameters()
+
+        if decoder_distribution in [dist.__name__ for dist in self.COUNT_DISTRIBUTIONS]:
+            if library_size is None:
+                raise ValueError(f"library_size must be set to 'learned' or 'observed' "
+                                 f"if decoder_distribution is in {self.COUNT_DISTRIBUTIONS}")
+            elif library_size != 'learned':
+                raise ValueError("library_size must be set to 'learned' in the current sams-vae implementation ")
 
         if n_genes is not None:
             self.n_genes = n_genes
@@ -129,84 +147,72 @@ class SparseAdditiveVAE(PerturbationModel):
         self.mask_prior_probability = mask_prior_probability
         self.softplus_output = softplus_output
         self.generative_counterfactual = generative_counterfactual
-        
-        perturbations_all = datamodule.train_dataset.transform['perturbations'](list(datamodule.train_dataset.perturbations))
-        self.perturbations_all_sum = perturbations_all.sum(axis=0)
-
-        if self.inject_covariates_encoder or self.inject_covariates_decoder:
-            if datamodule is None or datamodule.train_context is None:
-                raise ValueError(
-                    "If inject_covariates is True, datamodule must be provided"
-                )
-            self.n_total_covariates = np.sum(
-                [
-                    len(unique_covs)
-                    for unique_covs in datamodule.train_context[
-                        "covariate_uniques"
-                    ].values()
-                ]
-            )
-
-        encoder_input_dim = (
-            self.n_genes + self.n_total_covariates
-            if self.inject_covariates_encoder
-            else self.n_genes
+        self.register_buffer(
+            'perturbations_all_sum',
+            torch.tensor(list(context['perturbation_counts'].values), dtype=torch.float32)
         )
-        decoder_input_dim = (
-            latent_dim + self.n_total_covariates
-            if self.inject_covariates_decoder
-            else latent_dim
-        )
+
+        encoder_input_dim = self.n_genes + self.n_total_covariates if self.inject_covariates_encoder else self.n_genes
+        decoder_input_dim = latent_dim + self.n_total_covariates if self.inject_covariates_decoder else latent_dim
 
         self.encoder_x = BaseEncoder(
             input_dim=encoder_input_dim + self.latent_dim,
             hidden_dim=hidden_dim_x,
             latent_dim=latent_dim,
-            n_layers=n_layers_encoder_x,
+            n_layers=n_layers_encoder_x
         )
 
         self.disable_sparsity = disable_sparsity
         self.disable_e_dist = disable_e_dist
         self.encoder_e = BaseEncoder(
-            input_dim=latent_dim + self.n_perts
-            if not self.disable_sparsity
-            else self.n_perts,
+            input_dim=latent_dim + self.n_perts if not self.disable_sparsity else self.n_perts,
             hidden_dim=hidden_dim_x,
             latent_dim=latent_dim,
-            n_layers=n_layers_encoder_e,
+            n_layers=n_layers_encoder_e
         )
 
         self.m_logits = torch.nn.Parameter(-torch.ones((self.n_perts, self.latent_dim)))
 
-        self.decoder = DeepIsotropicGaussian(
-            decoder_input_dim,
-            hidden_dim_x,
-            self.n_genes,
-            n_layers_decoder,
-            dropout,
-            softplus_output,
-        )
+        if decoder_distribution == "Gaussian":
+            self.decoder = DeepGaussian(decoder_input_dim, hidden_dim_x, self.n_genes, n_layers_decoder, dropout)
+        elif decoder_distribution == "IsotropicGaussian":
+            self.decoder = DeepIsotropicGaussian(decoder_input_dim, hidden_dim_x, self.n_genes, n_layers_decoder,
+                                                 dropout, softplus_output)
+        elif decoder_distribution == "Poisson":
+            self.decoder = DeepPoisson(decoder_input_dim, hidden_dim_x, self.n_genes, n_layers_decoder, dropout,
+                                       library_size)
+        elif decoder_distribution == "PoissonGamma":
+            self.decoder = DeepPoissonGamma(decoder_input_dim, hidden_dim_x, self.n_genes, n_layers_decoder, dropout,
+                                            library_size, use_legacy_negative_binomial)
+        elif decoder_distribution == "ZeroInflatedPoissonGamma":
+            self.decoder = ZeroInflatedPoissonGamma(
+                decoder_input_dim, hidden_dim_x, self.n_genes, n_layers_decoder, dropout, library_size,
+                use_legacy_negative_binomial, dispersion_by_gene_cell)
+        else:
+            raise ValueError(
+                "decoder_distribution must be one of 'Gaussian', 'IsotropicGaussian', 'Poisson', 'PoissonGamma', 'ZeroInflatedPoissonGamma'"
+            )
+
+        self.decoder_distribution = decoder_distribution
 
     def forward(
-        self,
-        observed_perturbed_expression: torch.Tensor,
-        perturbation: torch.Tensor,
-        covariates: dict,
-        inference: bool = False,
+            self,
+            observed_perturbed_expression: torch.Tensor,
+            perturbation: torch.Tensor,
+            covariates: dict,
+            inference: bool = False
     ) -> Tuple:
+
         batch_size = observed_perturbed_expression.shape[0]
         perturbations_per_cell = perturbation.sum(axis=1)
 
         if self.inject_covariates_encoder or self.inject_covariates_decoder:
-            merged_covariates = torch.cat(
-                [cov.squeeze() for cov in covariates.values()], dim=1
-            )
+            merged_covariates = torch.cat([cov if cov.ndim == 2 else cov.squeeze() for cov in covariates.values()],
+                                          dim=1)
 
         if self.inject_covariates_encoder:
             observed_expression_with_covariates = torch.cat(
-                [observed_perturbed_expression, merged_covariates.to(self.device)],
-                dim=1,
-            )
+                [observed_perturbed_expression, merged_covariates.to(self.device)], dim=1)
         else:
             observed_expression_with_covariates = observed_perturbed_expression
 
@@ -226,16 +232,10 @@ class SparseAdditiveVAE(PerturbationModel):
 
         # Only process perturbations if there are any in the batch
         if z_p_index_batch.nelement() > 0:
-            m_t = torch.cat(
-                [
-                    m[perturbation[i].bool()]
-                    for i in range(batch_size)
-                    if perturbation[i].bool().any()
-                ]
-            )
-            perturbation_expanded = perturbation.repeat_interleave(
-                perturbations_per_cell.int(), dim=0
-            )
+            m_t = torch.cat([
+                m[perturbation[i].bool()] for i in range(batch_size) if perturbation[i].bool().any()
+            ])
+            perturbation_expanded = perturbation.repeat_interleave(perturbations_per_cell.int(), dim=0)
 
             if self.disable_sparsity:
                 mask_and_perturbation = perturbation_expanded
@@ -257,11 +257,9 @@ class SparseAdditiveVAE(PerturbationModel):
             z_p.index_add_(0, z_p_index_batch, combined_effect)
 
         observed_expression_with_covariates_and_z_p = torch.cat(
-            [observed_expression_with_covariates, z_p], dim=-1
-        )  # use torch.zeros_like(z_p) to mimic posterior inference
-        z_mu_x, z_log_var_x = self.encoder_x(
-            observed_expression_with_covariates_and_z_p
-        )
+            [observed_expression_with_covariates, z_p],
+            dim=-1)  # use torch.zeros_like(z_p) to mimic posterior inference
+        z_mu_x, z_log_var_x = self.encoder_x(observed_expression_with_covariates_and_z_p)
 
         # Sample from q(z|x)
         q_z = dist.Normal(z_mu_x, torch.exp(0.5 * z_log_var_x).clip(min=1e-8))
@@ -295,37 +293,25 @@ class SparseAdditiveVAE(PerturbationModel):
                 log_qe_pe.index_add_(0, z_p_index_batch, log_qe - log_pe)
 
             # Apply adjustment factor
-            adjustment_factor = 1 / (
-                perturbation @ self.perturbations_all_sum.to(self.device)
-            )
+            adjustment_factor = 1 / (perturbation @ self.perturbations_all_sum.to(self.device))
 
             # Set adjustment_factor to 0 if it is 0 to avoid division by 0 for control values
             adjustment_factor[adjustment_factor.isinf()] = 0
             log_qe_pe = log_qe_pe * adjustment_factor
 
         # Compute reconstruction loss
-        reconstruction_loss = self.decoder.reconstruction_loss(
-            predictions, observed_perturbed_expression
-        )
+        reconstruction_loss = self.decoder.reconstruction_loss(predictions, observed_perturbed_expression)
 
         if self.disable_sparsity:
-            log_qm_pm = torch.zeros(
-                perturbation.shape[1],
-                device=reconstruction_loss.device,
-                dtype=reconstruction_loss.dtype,
-            )
+            log_qm_pm = torch.zeros(perturbation.shape[1],
+                                    device=reconstruction_loss.device,
+                                    dtype=reconstruction_loss.dtype)
         else:
             # Compute mask prior log probabilities
             q_m = dist.Bernoulli(probs=torch.sigmoid(self.m_logits))
-            p_m = dist.Bernoulli(
-                probs=self.mask_prior_probability * torch.ones_like(self.m_logits)
-            )
+            p_m = dist.Bernoulli(probs=self.mask_prior_probability * torch.ones_like(self.m_logits))
             log_qm_pm = (q_m.log_prob(m) - p_m.log_prob(m)).sum(axis=-1)
-            log_qm_pm = (
-                log_qm_pm
-                * perturbation.sum(axis=0)
-                / self.perturbations_all_sum.to(self.device)
-            )
+            log_qm_pm = log_qm_pm * perturbation.sum(axis=0) / self.perturbations_all_sum.to(self.device)
 
         # Final ELBO computation
         kld = (log_qz - log_pz).mean() + log_qe_pe.mean() + log_qm_pm.sum() / batch_size
@@ -333,93 +319,59 @@ class SparseAdditiveVAE(PerturbationModel):
 
         return predictions, reconstruction_loss, kld, elbo
 
-    def training_step(self, batch: Batch, batch_idx: int) -> torch.Tensor:
+    def training_step(
+            self,
+            batch: Batch,
+            batch_idx: int
+    ) -> torch.Tensor:
+
         observed_perturbed_expression = batch.gene_expression.squeeze()
         perturbation = batch.perturbations.squeeze()
         covariates = batch.covariates
 
-        _, mse, kld, elbo = self(
-            observed_perturbed_expression, perturbation, covariates
-        )
+        _, mse, kld, elbo = self(observed_perturbed_expression, perturbation, covariates)
         loss = -elbo  # Minimize negative ELBO
-        self.log(
-            "kld",
-            kld,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-            batch_size=len(batch),
-        )
-        self.log(
-            "recon_loss",
-            mse,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-            batch_size=len(batch),
-        )
-        self.log(
-            "elbo",
-            elbo,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-            batch_size=len(batch),
-        )
+        self.log("kld", kld, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch))
+        self.log("recon_loss", mse, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch))
+        self.log("elbo", elbo, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch))
 
         return loss
 
-    def validation_step(self, batch: Batch, batch_idx: int) -> torch.Tensor:
+    def validation_step(
+            self,
+            batch: Batch,
+            batch_idx: int
+    ) -> torch.Tensor:
+
         observed_perturbed_expression = batch.gene_expression.squeeze()
         perturbation = batch.perturbations.squeeze()
         covariates = batch.covariates
 
-        _, mse, kld, elbo = self(
-            observed_perturbed_expression, perturbation, covariates
-        )
+        _, mse, kld, elbo = self(observed_perturbed_expression, perturbation, covariates)
         val_loss = -elbo  # Minimize negative ELBO
-        self.log(
-            "val_kld",
-            kld,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-            batch_size=len(batch),
-        )
-        self.log(
-            "val_loss",
-            val_loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-            batch_size=len(batch),
-        )
+        self.log("val_kld", kld, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch))
+        self.log("val_loss", val_loss, on_step=False, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch))
         return val_loss
 
-    def predict(self, batch: Batch) -> torch.Tensor:
+    def predict(
+            self,
+            batch: Batch
+    ) -> torch.Tensor:
+
         observed_perturbed_expression = batch.gene_expression.squeeze().to(self.device)
         perturbation = batch.perturbations.squeeze().to(self.device)
         covariates = batch.covariates
 
         if self.generative_counterfactual:
-            x_sample, _, _, _ = self(
-                observed_perturbed_expression, perturbation, covariates, inference=True
-            )
+            x_sample, _, _, _ = self(observed_perturbed_expression, perturbation, covariates, inference=True)
         else:
-            x_sample, _, _, _ = self(
-                observed_perturbed_expression, perturbation, covariates, inference=False
-            )
+            x_sample, _, _, _ = self(observed_perturbed_expression, perturbation, covariates, inference=False)
         return x_sample
 
     def reparameterize(
-        self,
-        mu: torch.Tensor,
-        log_var: torch.Tensor,
+            self,
+            mu: torch.Tensor,
+            log_var: torch.Tensor,
     ) -> torch.Tensor:
         """
         Reparametrizes the Gaussian distribution so (stochastic) backpropagation can be applied.

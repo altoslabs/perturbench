@@ -78,6 +78,8 @@ class DeepIsotropicGaussian(Decoder):
             return F.mse_loss(predictions, target, reduction="none").sum(-1).mean()
         elif reduction == "none":
             return F.mse_loss(predictions, target, reduction="none").sum(-1)
+        elif reduction == 'featurewise_mean':
+            return F.mse_loss(predictions, target, reduction="none").mean()
         else:
             raise ValueError("Reduction argument only accepts 'mean' or 'none'")
 

@@ -1,0 +1,8 @@
+conf:  
+  _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
+  _partial_: True
+  warmup_epochs: 10
+  max_epochs: ${trainer.max_epochs}
+
+dependencies:
+  optimizer: optimizer

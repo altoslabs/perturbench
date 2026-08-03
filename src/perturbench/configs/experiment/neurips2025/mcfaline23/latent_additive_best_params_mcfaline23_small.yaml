@@ -12,8 +12,9 @@ trainer:
 data:
   evaluation:
     chunk_size: 5
-  batch_size: 8000
-  num_workers: 8
+  loader:
+    batch_size: 8000
+    num_workers: 8
   splitter:
     split_path: ${paths.data_dir}/mcfaline23_gxe_splits/small_covariate_split.csv
 

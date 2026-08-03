@@ -1,0 +1,12 @@
+conf:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  factor: 0.1
+
+dependencies:
+  optimizer: optimizer
+
+extras:
+  monitor: val_loss
+  frequency: 1
+  interval: epoch

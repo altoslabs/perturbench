@@ -3,7 +3,7 @@
 defaults:
 - override /model: sams_vae
 - override /callbacks: default
-- override /data: jiang24
+- override /data: jiang24_no_controls
 
 trainer:
   max_epochs: 400
@@ -29,7 +29,7 @@ model:
   wd: 9.99382916747775e-07
 
 data:
-  add_controls: false
-  batch_size: 256
+  loader:
+    batch_size: 256
   evaluation:
     chunk_size: 10

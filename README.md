@@ -253,14 +253,12 @@ If the dataset is not stored as an [anndata](https://anndata.readthedocs.io/en/l
 ### Data preprocessing
 Most downloaded datasets will contain raw counts, which will need to be processed before model training. We provide a default preprocessing pipeline that applies standard log-normalization and filters for highly variable or differentially expressed genes. Specifically the counts for each cell are divided by the total counts for that cell, multiplied by a scaling factor (`1e4`), and then log-transformed. The dataset is then subset to the top 4000 highly variable genes and top 50 differentially expressed genes per perturbation (computed on a per covariate basis). If the perturbations are genetic, those genes are also included in the expression matrix by default. Datasets ending in `_preprocessed.h5ad` have been preprocessed.
 
-The unnormalized raw counts can be accessed in the `adata.layers['counts']` slot. To use raw counts instead of log-normalized expression add
-```
-data:
-  use_counts: True
-```
-to your experiment config.
-
 To preprocess a new dataset, use the `preprocess` function in `src/analysis/preprocess.py`.
 
 ### Data config
 Once the dataset is preprocessed, you will need to create a dataset config file where you will specify which metadata columns contain the perturbations and covariates, as well as dataloader parameters. Example configs can be found at `src/configs/data`. You will also specifically need to specify how you want to split the data. You can select from a predefined split in the `src/configs/data/splitter` directory such as cross cell type or combination prediction splits. You can also specify a custom split saved as a `csv`. The data config is also where you specify the evaluation parameters, such as which metrics you want to evaluate. Configs that specify those parameters can be found in `src/configs/data/evaluation`.
+
+## Tips
+- Replace the in-memory dataloader with anndata-backed version to enable for memory-efficient dataloading. Modify the configs, or simply override the command-line options `data.data_iter_factory._target_=perturbench.data.datasets.anndata_backed.SingleCellPerturbation.from_anndata`. This will be helpful for model training on large datasets such as `Jiang24`. Note that this anndata-backed dataloading does not support control pairing.
+- To use the multifile-H5 dataloader, refer to the data config example [multifile_h5_example.yaml](src/perturbench/configs/data/multifile_h5_example.yaml). Add actual data paths, perturbation/covariate information, gene feature filters and train/val/test splits as needed.
+- `data.use_counts` option has been deprecated. To train your model on raw counts (although we recommend training on normalized and log1p'ed data), make sure the following requirements are met: (1) preprocess the dataset to place raw counts in the `.X` field, (2) select decoder head appropriate for modeling count-based data by overriding `+model.decoder_distribution=ZeroInflatedPoissonGamma`, for either `CPA`, `latent LatentAdditive` or `SparseAdditiveVAE` model. Other decoder options include `DeepPoison` and `DeepPoissonGamma`, and (3) append `+model.count_based_input_expression=True` to command-line or modify the config file, to elicit correct model training behavior
