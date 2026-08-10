@@ -563,10 +563,10 @@ class Evaluation:
 
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-        for ax, model in zip(axs[0], models):
+        for ax, model in zip(axs[0], models, strict=True):
             ax.set_title(model)
 
-        for ax, pert in zip(axs[:, 0], perts):
+        for ax, pert in zip(axs[:, 0], perts, strict=True):
             ax.set_ylabel(pert, size="large")
 
         fig.supxlabel(x_title, size=axis_title_size)
@@ -576,7 +576,7 @@ class Evaluation:
     def summary_plots(
         self,
         aggr_method: str = "logfc",
-        metrics: str | list[str] = ["pearson"],
+        metrics: str | list[str] | None = None,
         models: list | None = None,
         figsize: tuple | None = None,
         alpha: float = 0.8,
@@ -601,6 +601,9 @@ class Evaluation:
             ylim (tuple, None): Y-axis limits
             **kwargs: Additional keyword arguments passed onto `boxplot_jitter`
         """
+        if metrics is None:
+            metrics = ["pearson"]
+
         if isinstance(metrics, str):
             metrics = [metrics]
 

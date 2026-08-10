@@ -152,8 +152,8 @@ def deg_pairwise_jaccard_similarity_helper(
     gene_names = eval.aggr['scores']['ref'].var_names
     obs_names = eval.aggr['scores']['ref'].obs_names
     deg_recalled_list = [set(gene_names[indices_pred]).intersection(gene_names[indices_truth])
-           for indices_pred, indices_truth in zip(pred, truth)]
-    deg_recalled_pd = pd.DataFrame.from_dict({name: pd.Series(list(li)) for name, li in zip(obs_names, deg_recalled_list)})
+           for indices_pred, indices_truth in zip(pred, truth, strict=True)]
+    deg_recalled_pd = pd.DataFrame.from_dict({name: pd.Series(list(li)) for name, li in zip(obs_names, deg_recalled_list, strict=True)})
     deg_recalled_pd = deg_recalled_pd.T
 
     pairwise_jaccard_similarity = np.zeros((len(deg_recalled_pd), len(deg_recalled_pd)), dtype=np.float32)

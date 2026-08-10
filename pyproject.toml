@@ -51,7 +51,12 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff",
+    # Pinned exactly, and read by astral-sh/ruff-action via version-file so CI
+    # and local dev run the same linter. Exact pinning is appropriate for a dev
+    # tool: a ruff minor release can change the default rule set (0.16.0 took
+    # this repo from 0 findings to 261), and lint results should not move
+    # underneath a branch. Bump deliberately.
+    "ruff==0.16.1",
 ]
 test = [
     "pytest",
@@ -80,12 +85,47 @@ version = {attr = "perturbench.modelcore.VERSION"}
 addopts = ["--import-mode=importlib"]
 
 [tool.ruff.lint]
-# Ruff's default rule set prior to 0.16.0. Restored explicitly so that
-# future default-set changes can't re-expand it without a deliberate commit.
-select = ["E4", "E7", "E9", "F"]
+# Explicit rule selection. This is load-bearing: ruff 0.16.0 substantially
+# widened the default set, and without an explicit `select` this repo goes
+# from 0 findings to 261 on a routine ruff upgrade. Selecting explicitly is
+# what makes lint results reproducible; the ruff version itself is pinned
+# separately in [project.optional-dependencies].
+#
+# Which prefixes are chosen is a separate decision from that reproducibility,
+# and it determines what CI actually catches. E4/E7/E9/F is ruff's own default
+# set, so selecting only those is reproducible but catches nothing here — it
+# reports "All checks passed" on merged main. W292 and B are added
+# deliberately:
+#
+#   W292 - missing newline at end of file (8 findings). The LICENSE.txt
+#          newline regression was caught by hand in #22; this catches the
+#          Python-file equivalent automatically. W291/W293
+#          (trailing whitespace) are deliberately excluded: all 46 are
+#          inside docstrings, where ruff classifies the fix as unsafe.
+#
+#   B    - flake8-bugbear (40 findings). Two real defect classes justify it:
+#            B008 - modelcore/models/embeddings.py:137 evaluates
+#                   torch.cuda.is_available() in a default argument, i.e.
+#                   once at import. Under distributed training this can
+#                   place tensors on the wrong device; in forked dataloader
+#                   workers it triggers CUDA re-initialization failure.
+#            B006 - three mutable default arguments (list[str] = []).
+#
+#          B905 (zip without strict=) accounts for 15 of the 40, but all 15
+#          were audited and every one pairs lists of equal length — several
+#          are structurally guaranteed (built in lockstep in one loop) or
+#          already guarded by an explicit length check that raises. So B905
+#          here documents an invariant rather than finding a bug; strict=True
+#          is a runtime no-op that makes the assumption enforced instead of
+#          assumed. Worth having, but not on bug-finding grounds.
+select = ["E4", "E7", "E9", "F", "W292", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore `E402` (import violations) in all `__init__.py` files, and in `path/to/file.py`.
 "__init__.py" = ["F401"]
-"*.ipynb" = ["E402", "F401"]
+# B018: a bare name on the last line of a cell is how notebooks display a
+# value, so "useless expression" is the idiom rather than a defect.
+# B905: notebooks are exploratory curation scripts, not library code, and the
+# committed .ipynb JSON is not a sensible thing to hand-edit for this.
+"*.ipynb" = ["E402", "F401", "B018", "B905"]
 # "path/to/file.py" = ["E402"]

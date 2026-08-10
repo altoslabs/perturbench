@@ -177,7 +177,7 @@ class DataLitModule(L.LightningDataModule):
 
         # Filter indices: keep only cells where ALL perturbations are in train
         filtered_indices = []
-        for idx, cell_perturbations in zip(split_indices, parsed_perturbations):
+        for idx, cell_perturbations in zip(split_indices, parsed_perturbations, strict=True):
             # cell_perturbations is a list of individual perturbations for this cell
             # Empty list means control cell - always keep
             if len(cell_perturbations) == 0 or all(p in train_perturbations for p in cell_perturbations):

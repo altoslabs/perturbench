@@ -156,12 +156,12 @@ class PerturbationDataSplitter:
             for covariate_key in self.covariate_keys
         ]
         self.covariates_merged = [
-            frozenset(covariates) for covariates in zip(*covariates_list)
+            frozenset(covariates) for covariates in zip(*covariates_list, strict=True)
         ]
         self.perturbation_covariates = [
             (perturbation, covariates)
             for perturbation, covariates in zip(
-                obs_dataframe[perturbation_key], self.covariates_merged
+                obs_dataframe[perturbation_key], self.covariates_merged, strict=True
             )
         ]
 

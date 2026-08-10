@@ -9,7 +9,7 @@ def differential_expression_by_covariate(
     adata,
     perturbation_key: str,
     perturbation_control_value: str,
-    covariate_keys: list[str] = [],
+    covariate_keys: list[str] | None = None,
     n_differential_genes=25,
     rankby_abs=True,
     key_added="rank_genes_groups_cov",
@@ -44,6 +44,9 @@ def differential_expression_by_covariate(
                 Dictionary where groups are stored as keys, and the list of DEGs
                 are the corresponding values
     """
+    if covariate_keys is None:
+        covariate_keys = []
+
     if "base" not in adata.uns["log1p"]:
         adata.uns["log1p"]["base"] = None
 

@@ -183,7 +183,7 @@ def get_covariates(df: pd.DataFrame, covariate_keys: list[str]) -> tuple[dict, d
             f"Original error: {e}"
         ) from e
 
-    return dict(zip(covariate_keys, covariates.T)), covariate_unique_values
+    return dict(zip(covariate_keys, covariates.T, strict=True)), covariate_unique_values
 
 
 def build_covariate_to_control_dict(
@@ -220,7 +220,7 @@ def build_covariate_to_control_dict(
         if len(categorical_keys) == 1:
             assert isinstance(group_key, (str, int))
             group_key = (group_key,)
-        key = dict(zip(categorical_keys, group_key))
+        key = dict(zip(categorical_keys, group_key, strict=True))
         covariate_to_controls_map[key] = group_indices
 
     return covariate_to_controls_map
@@ -233,7 +233,7 @@ def map_perturbation_to_emb(
     emb_width = len(perturbation_embeddings.columns)
     loaded_perturbation_embeddings = []
 
-    for i, pert_names in enumerate(perturbations):
+    for pert_names in perturbations:
 
         perturbations_ = []
         for pert_name in pert_names:
@@ -304,7 +304,7 @@ def load_dataframe_from_h5(h5_file_path: str, df_key: str, cols_load: list[str] 
         if missing_cols:
             warnings.warn(
                 f"Columns listed in 'column-order' but missing from {h5_file_path}: {missing_cols}. "
-                "These will be skipped."
+                "These will be skipped.", stacklevel=1
             )
             cols_load = [c for c in cols_load if c in actual_keys]
 
@@ -319,7 +319,7 @@ def load_dataframe_from_h5(h5_file_path: str, df_key: str, cols_load: list[str] 
                     cats = safe_decode_array(h5_file[df_key][k]['categories'][:])
                     df[k] = pd.Categorical.from_codes(codes, cats)
                 except ValueError:
-                    warnings.warn(f"Column {k} could not be loaded from {h5_file_path}")
+                    warnings.warn(f"Column {k} could not be loaded from {h5_file_path}", stacklevel=1)
             else:
                 df[k] = h5_file[df_key][k][:]
 

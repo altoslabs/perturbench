@@ -560,7 +560,8 @@ class PerturbationModel(L.LightningModule, ABC):
             if continuous_covs:
                 warnings.warn(
                     f"Skipping cell_eval: continuous covariates detected ({continuous_covs}). "
-                    f"cell_eval does not support continuous covariates for control matching."
+                    f"cell_eval does not support continuous covariates for control matching.",
+                    stacklevel=1
                 )
                 run_cell_eval = False
 

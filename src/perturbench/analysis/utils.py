@@ -60,8 +60,8 @@ def pert_cluster_filter(adata,
 def get_ensembl_mappings():
     try:
         from pybiomart import Dataset
-    except ImportError:
-        raise ImportError("Please install the pybiomart package to use this function")
+    except ImportError as err:
+        raise ImportError("Please install the pybiomart package to use this function") from err
 
     # Set up connection to server
     dataset = Dataset(name="hsapiens_gene_ensembl", host="http://www.ensembl.org")
@@ -71,7 +71,7 @@ def get_ensembl_mappings():
     ensembl_to_genesymbol = {}
     # Store the data in a dict
     for gene_id, gene_symbol in zip(
-        id_gene_df["Gene stable ID"], id_gene_df["HGNC symbol"]
+        id_gene_df["Gene stable ID"], id_gene_df["HGNC symbol"], strict=True
     ):
         ensembl_to_genesymbol[gene_id] = gene_symbol
 

@@ -47,7 +47,7 @@ class Jiang24(Accessor):
                     "Automatic data curation not available for this dataset. \
                      Use the notebooks in notebooks/neurips2025/data_curation \
                      to download and preprocess the data."
-                )
+                ) from e
             
             print("Saved processed data to:", self.processed_data_path)
 

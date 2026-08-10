@@ -185,7 +185,7 @@ class SingleCellPerturbationWithControls(SingleCellPerturbation):
         controls = []
         control_embeddings = []
         
-        for i, control_indices in enumerate(control_indices_list):
+        for control_indices in control_indices_list:
             # Convert to tuple for caching
             control_indices_tuple = tuple(control_indices)
             
@@ -395,7 +395,7 @@ class SingleCellPerturbationWithControls(SingleCellPerturbation):
                     )
                 
                 cell_id_to_control_ids = {}
-                for i, (mapping_path, h5_path) in enumerate(zip(control_indices_dict_path, adata_paths)):
+                for i, (mapping_path, h5_path) in enumerate(zip(control_indices_dict_path, adata_paths, strict=True)):
                     # Load mapping for this file
                     with open(mapping_path, 'rb') as f:
                         file_mapping = pickle.load(f)

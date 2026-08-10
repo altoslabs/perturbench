@@ -328,7 +328,8 @@ def aggregate_adata(
 
                     if np.sum(inf_rows)/len(inf_rows) > 0.5:
                         warnings.warn(
-                            f'{cov} has a large fraction ({np.sum(inf_rows)/len(inf_rows)}) of inf t-scores'
+                            f'{cov} has a large fraction ({np.sum(inf_rows)/len(inf_rows)}) of inf t-scores',
+                            stacklevel=1
                         )
                     
                     if aggr_method == 'scores':

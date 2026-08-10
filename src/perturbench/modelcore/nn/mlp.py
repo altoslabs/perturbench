@@ -73,7 +73,7 @@ class ResMLP(nn.Module):
         layers.append(nn.LayerNorm(hidden_dim))
         layers.append(nn.ReLU())
 
-        for i in range(0, n_layers - 1):
+        for _ in range(0, n_layers - 1):
             layers.append(nn.Linear(hidden_dim, hidden_dim))
             layers.append(nn.LayerNorm(hidden_dim))
             layers.append(nn.ReLU())

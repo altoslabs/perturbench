@@ -21,8 +21,8 @@ def download_scgpt_model(model_dir):
     # Try to import gdown for Google Drive downloads
     try:
         import gdown
-    except ImportError:
-        raise ImportError("gdown is required for scGPT embedding. Install with: pip install gdown")
+    except ImportError as err:
+        raise ImportError("gdown is required for scGPT embedding. Install with: pip install gdown") from err
     
     # Google Drive folder ID from the provided URL
     folder_id = "1oWh_-ZRdhtoGQ2Fw24HP41FgLoomVo-y"
@@ -97,8 +97,8 @@ def embed_scgpt(adata, model_dir=None):
     """Embed data using scGPT."""
     try:
         import scgpt as scg
-    except ImportError:
-        raise ImportError("scgpt is required for scGPT embedding. Install with: pip install scgpt")
+    except ImportError as err:
+        raise ImportError("scgpt is required for scGPT embedding. Install with: pip install scgpt") from err
     
     if model_dir is None:
         model_dir = Path("pretrained_models/scGPT_human")

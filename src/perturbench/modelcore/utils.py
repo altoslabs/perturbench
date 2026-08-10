@@ -50,7 +50,7 @@ def multi_instantiate(
     instances: List[T] = []
 
     if not cfg:
-        warnings.warn("No configs found! Skipping...")
+        warnings.warn("No configs found! Skipping...", stacklevel=1)
         return instances
 
     if not isinstance(cfg, DictConfig):
@@ -126,7 +126,7 @@ def instantiate_with_context(
         context: dict[str, Any] | None = None,
 ) -> Any:
     if not cfg:
-        warnings.warn("No configs found! Skipping...")
+        warnings.warn("No configs found! Skipping...", stacklevel=1)
         return None
 
     if not isinstance(cfg, DictConfig):

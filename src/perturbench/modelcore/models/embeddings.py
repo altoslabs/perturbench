@@ -134,7 +134,7 @@ class PCAEmbeddingModel(EmbeddingModel):
         feature_loadings: np.ndarray,
         mean_centering_vector: np.ndarray,
         model_name: str = 'pca',
-        device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device: torch.device | None = None
     ):
         """
         Initialize the PCA embedding model.
@@ -146,6 +146,9 @@ class PCAEmbeddingModel(EmbeddingModel):
             mean_centering_vector (np.ndarray): Mean values for centering with shape 
                                               (n_features,)
         """
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         self.model_name = model_name
         self.device = device
         

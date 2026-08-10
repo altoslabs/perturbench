@@ -58,7 +58,7 @@ def download_file(url: str, output_dir: str, output_filename: str) -> str:
             sp.run(["wget", url, "-O", output_path], check=True)
         except Exception as e:
             print(f"Error downloading file from {url} with wget: {e}")
-            raise ValueError(f"Error downloading file from {url}: {e}")
+            raise ValueError(f"Error downloading file from {url}: {e}") from e
     
     if "h5ad.gz" in output_filename:
         # Decompress the .gz file using native gzip module

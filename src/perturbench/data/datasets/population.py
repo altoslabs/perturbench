@@ -33,8 +33,11 @@ log = logging.getLogger(__name__)
 def unique_perturbation_dataframe(
         dataset: ad.AnnData,
         perturbation_key: str,
-        covariate_keys: list[str] = [],
+        covariate_keys: list[str] | None = None,
 ):
+    if covariate_keys is None:
+        covariate_keys = []
+
     """Get a dataframe of unique perturbation/covariate combinations"""
     unique_df = dataset.obs.loc[:, [perturbation_key] + covariate_keys].copy()
     unique_df = unique_df.drop_duplicates()
@@ -80,7 +83,7 @@ def _concat_adatas_preserve_obs(
 
     # Make cell indices unique BEFORE concatenation to prevent misalignment
     # This follows the pattern from H5LitModule.accessor and SingleCellPerturbation.from_h5
-    for i, (adata, file_idx) in enumerate(zip(adatas, file_indices)):
+    for adata, file_idx in zip(adatas, file_indices, strict=True):
         obs_df = adata.obs
 
         # Build unique index: original_index-f{file_idx}-{dataset_name}

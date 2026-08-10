@@ -11,7 +11,9 @@ class ZeroInflatedNegativeBinomial(dist.Distribution):
         self._mean = None
         self._variance = None
 
-    def sample(self, sample_shape=torch.Size()):
+    def sample(self, sample_shape=None):
+        if sample_shape is None:
+            sample_shape = torch.Size()
         # note: this is not actually sampling from NB
         base_samples = self.base_dist.sample(sample_shape)
         zero_mask = torch.bernoulli(torch.sigmoid(self.zero_prob_logits)).bool()

@@ -66,8 +66,8 @@ class _RankGenesControlVar(_RankGenes):
 
         self._basic_stats()
 
-        for group_index, (mask_obs, mean_group, var_group) in enumerate(
-            zip(self.groups_masks_obs, self.means, self.vars)
+        for group_index, (mask_obs, mean_group, var_group) in enumerate(  # noqa: B007
+            zip(self.groups_masks_obs, self.means, self.vars, strict=True)
         ):
             if self.ireference is not None and group_index == self.ireference:
                 continue
