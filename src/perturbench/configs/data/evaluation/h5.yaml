@@ -1,7 +1,7 @@
 split_value_to_evaluate: val
 
 test_data_iter_factory:
-  _target_: data.datasets.CounterfactualWithReference.from_h5
+  _target_: perturbench.data.datasets.CounterfactualWithReference.from_h5
   _partial_: True
   max_control_cells_per_covariate: 1000
   perturbation_key: "${data.data_iter_factory.perturbation_key}"

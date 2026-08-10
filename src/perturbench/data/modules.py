@@ -2,6 +2,7 @@ import builtins
 from enum import StrEnum
 from collections.abc import Callable
 from typing import Sequence
+from pathlib import Path
 
 from omegaconf import DictConfig
 import lightning as L
@@ -15,7 +16,7 @@ from perturbench.modelcore.utils import (
 
 from .loaders import BatchedDataLoader
 from .collate import noop_collate
-from .utils import parse_perturbation_combinations
+from .utils import load_dataframe_from_h5, parse_perturbation_combinations
 
 import inspect
 import logging
@@ -558,5 +559,67 @@ class AnnDataLitModule(DataLitModule):
 
     loaders = {
         EXAMPLE: DataLoader,
+        BATCH: BatchedDataLoader,
+    }
+
+
+class H5LitModule(DataLitModule):
+    @staticmethod
+    def accessor(filename: str | list[str], append_dataset_to_index: bool = False, **kwargs):
+        """Load observation data from one or more h5ad files.
+
+        Args:
+            filename: path to h5ad file(s). Can be a single path or a list
+              of paths for multi-file loading.
+            append_dataset_to_index: if True, append the 'dataset' column value
+              to each cell index (e.g., 'AAACCTG-1' -> 'AAACCTG-1-feng24').
+              Requires a 'dataset' column in obs. Useful for matching split files
+              that were created from merged datasets.
+
+        Returns:
+            Tuple of (filenames, combined_obs_df) where filenames is a list
+            and combined_obs_df contains all observations with a '_file_idx'
+            column indicating the source file.
+        """
+        # Normalize to list
+        if isinstance(filename, (str, Path)):
+            filenames = [str(filename)]
+        else:
+            filenames = [str(f) for f in filename]
+
+        if len(filenames) == 1:
+            # Single file - original behavior (return single path, not list)
+            obs_df = load_dataframe_from_h5(filenames[0], 'obs')
+            return (filenames[0], obs_df)
+
+        # Multiple files - concatenate obs dataframes
+        obs_dfs = []
+        cumulative_count = 0
+        for i, f in enumerate(filenames):
+            df = load_dataframe_from_h5(f, 'obs')
+            df = df.copy()
+
+            # Append dataset name and file index to index if requested
+            # File index is needed to handle cases where multiple files share the same
+            # dataset name (e.g., nadig24_hepg2 and nadig24_jurkat both have dataset='nadig24')
+            if append_dataset_to_index:
+                if 'dataset' not in df.columns:
+                    raise ValueError(
+                        f"append_dataset_to_index=True requires a 'dataset' column in obs, "
+                        f"but file '{f}' does not have one. "
+                        f"Available columns: {list(df.columns)}"
+                    )
+                dataset_name = df['dataset'].iloc[0]  # All rows have same dataset
+                df.index = df.index.astype(str) + f'-f{i}-' + dataset_name
+
+            df['_file_idx'] = i
+            df['_global_idx'] = range(cumulative_count, cumulative_count + len(df))
+            cumulative_count += len(df)
+            obs_dfs.append(df)
+
+        combined_obs = pd.concat(obs_dfs, ignore_index=False)
+        return (filenames, combined_obs)
+
+    loaders = {
         BATCH: BatchedDataLoader,
     }
