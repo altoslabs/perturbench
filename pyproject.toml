@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+# setuptools>=77 is required for PEP 639 `license` / `license-files` support below.
+requires = ["setuptools>=77", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +8,8 @@ name = "perturbench"
 description = "PerturBench: Benchmarking Machine Learning Models for Cellular Perturbation Analysis"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file="LICENSE.txt"}
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
 classifiers = [
     "Programming Language :: Python :: 3",
 ]

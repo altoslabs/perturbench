@@ -30,5 +30,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Additional License Information
 -------------------
 Certain files within this repository are subject to different licensing terms.
-Please see the specific files in the perturbench/modelcore/models for their
-respective licenses.
+Please see the following files for their respective licenses:
+
+  src/perturbench/modelcore/models/cpa.py
+  src/perturbench/analysis/benchmarks/_rank_genes_helpers.py
+
+Both are BSD 3-Clause licensed, as is this project.
